@@ -1,3 +1,18 @@
+/*******************************************************************************
+ * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *******************************************************************************/
 package com.tgx.tina.android.plugin.contacts.calllog;
 
 import com.tgx.tina.android.plugin.contacts.base.ContactTask;
@@ -7,35 +22,35 @@ import android.database.Cursor;
 import android.provider.CallLog.Calls;
 import base.tina.core.task.infc.ITaskProgress.TaskProgressType;
 
-
 public class CallLogReadTask
-        extends
-        ContactTask
+				extends
+				ContactTask
 {
-	
-	public CallLogReadTask(Context context) {
+
+	public CallLogReadTask(Context context)
+	{
 		super(context);
 	}
-	
+
 	@Override
 	public int getSerialNum() {
 		return SerialNum;
 	}
-	
-	public final static int SerialNum          = SerialDomain + 10;
-	
-	final String[]          PROJECTION_STRINGS = {
-	        Calls.NUMBER,//0
-	        Calls.DATE,//1
-	        Calls.DURATION,//2
-	        Calls.TYPE,//3
-	        Calls.NEW,//4
-	        Calls._ID,//5
-	        Calls.CACHED_NAME
-	                                           //6
-	                                           };
-	final static int        MAX_READ           = 500;
-	
+
+	public final static int	SerialNum			= SerialDomain + 10;
+
+	final String[]			PROJECTION_STRINGS	= {
+					Calls.NUMBER ,//0
+					Calls.DATE ,//1
+					Calls.DURATION ,//2
+					Calls.TYPE ,//3
+					Calls.NEW ,//4
+					Calls._ID ,//5
+					Calls.CACHED_NAME
+													//6
+												};
+	final static int		MAX_READ			= 500;
+
 	@Override
 	public void run() throws Exception {
 		CallLogProfile profile = null;

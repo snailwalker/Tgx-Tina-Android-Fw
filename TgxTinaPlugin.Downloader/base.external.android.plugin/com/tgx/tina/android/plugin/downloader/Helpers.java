@@ -1,3 +1,18 @@
+/*******************************************************************************
+ * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *******************************************************************************/
 package com.tgx.tina.android.plugin.downloader;
 
 import java.io.File;
@@ -18,26 +33,26 @@ import android.os.SystemClock;
 import android.telephony.TelephonyManager;
 import android.webkit.MimeTypeMap;
 
-
 /**
  * Some helper functions for the download manager
  */
 public class Helpers
 {
-	
-	public static Random         sRandom                     = new Random(SystemClock.uptimeMillis());
-	
+
+	public static Random			sRandom						= new Random(SystemClock.uptimeMillis());
+
 	/** Regex used to parse content-disposition headers */
-	private static final Pattern CONTENT_DISPOSITION_PATTERN = Pattern.compile("attachment;\\s*filename\\s*=\\s*\"([^\"]*)\"");
-	
-	private Helpers() {
+	private static final Pattern	CONTENT_DISPOSITION_PATTERN	= Pattern.compile("attachment;\\s*filename\\s*=\\s*\"([^\"]*)\"");
+
+	private Helpers()
+	{
 	}
-	
+
 	/*
-	 * Parse the Content-Disposition HTTP Header. The format of the header
-	 * is defined here: http://www.w3.org/Protocols/rfc2616/rfc2616-sec19.html
-	 * This header provides a filename for content that is going to be
-	 * downloaded to the file system. We only support the attachment type.
+	 * Parse the Content-Disposition HTTP Header. The format of the header is
+	 * defined here: http://www.w3.org/Protocols/rfc2616/rfc2616-sec19.html This
+	 * header provides a filename for content that is going to be downloaded to
+	 * the file system. We only support the attachment type.
 	 */
 	private static String parseContentDisposition(String contentDisposition) {
 		try
@@ -51,12 +66,13 @@ public class Helpers
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Creates a filename (where the file should be saved) from a uri.
 	 */
-	public static DownloadFileInfo generateSaveFile(Context context, String url, String hint, String contentDisposition, String contentLocation, String mimeType, int destination, int contentLength) throws FileNotFoundException {
-		
+	public static DownloadFileInfo generateSaveFile(Context context, String url, String hint, String contentDisposition, String contentLocation, String mimeType, int destination, int contentLength)
+					throws FileNotFoundException {
+
 		/*
 		 * Don't download files that we won't be able to handle
 		 */
@@ -70,7 +86,7 @@ public class Helpers
 			}
 		}
 		String filename = chooseFilename(url, hint, contentDisposition, contentLocation, destination);
-		
+
 		// Split filename between base and extension
 		// Add an extension if filename does not have one
 		String extension = null;
@@ -84,14 +100,14 @@ public class Helpers
 			extension = chooseExtensionFromFilename(mimeType, destination, filename, dotIndex);
 			filename = filename.substring(0, dotIndex);
 		}
-		
+
 		/*
 		 * Locate the directory where the file will be saved
 		 */
-		
+
 		File baseFile = null;
 		StatFs stat = null;
-		
+
 		if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED))
 		{
 			String root = Environment.getExternalStorageDirectory().getPath();
@@ -110,7 +126,7 @@ public class Helpers
 			base.tina.core.log.LogPrinter.d(Constants.TAG, "download aborted - base.tina.core.log.LogPrinter.xternal storage");
 			return new DownloadFileInfo(null, null, GlobalDownload.STATUS_FILE_ERROR);
 		}
-		
+
 		/*
 		 * Check whether there's enough space on the target filesystem to save
 		 * the file. Put a bit of margin (in case creating the file grows the
@@ -122,18 +138,18 @@ public class Helpers
 			base.tina.core.log.LogPrinter.d(Constants.TAG, "download aborted - not enough free space");
 			return new DownloadFileInfo(null, null, GlobalDownload.STATUS_FILE_ERROR);
 		}
-		
+
 		boolean recoveryDir = Constants.RECOVERY_DIRECTORY.equalsIgnoreCase(filename + extension);
-		
+
 		filename = baseFile.getPath() + File.separator + filename;
-		
+
 		/*
 		 * Generate a unique filename, create the file, return it.
 		 */
-		
+
 		//#debug verbose
 		base.tina.core.log.LogPrinter.v(Constants.TAG, "target file: " + filename + extension);
-		
+
 		String fullFilename = chooseUniqueFilename(destination, filename, extension, recoveryDir);
 		if (fullFilename != null)
 		{
@@ -144,10 +160,10 @@ public class Helpers
 			return new DownloadFileInfo(null, null, GlobalDownload.STATUS_FILE_ERROR);
 		}
 	}
-	
+
 	private static String chooseFilename(String url, String hint, String contentDisposition, String contentLocation, int destination) {
 		String filename = null;
-		
+
 		// First, try to use the hint from the application, if there's one
 		if (filename == null && hint != null && !hint.endsWith("/"))
 		{
@@ -163,7 +179,7 @@ public class Helpers
 				filename = hint;
 			}
 		}
-		
+
 		// If we couldn't do anything with the hint, move toward the content disposition
 		if (filename == null && contentDisposition != null)
 		{
@@ -172,7 +188,7 @@ public class Helpers
 			{
 				//#debug verbose
 				base.tina.core.log.LogPrinter.v(Constants.TAG, "getting filename from content-disposition");
-				
+
 				int index = filename.lastIndexOf('/') + 1;
 				if (index > 0)
 				{
@@ -180,7 +196,7 @@ public class Helpers
 				}
 			}
 		}
-		
+
 		// If we still have nothing at this point, try the content location
 		if (filename == null && contentLocation != null)
 		{
@@ -189,7 +205,7 @@ public class Helpers
 			{
 				//#debug verbose
 				base.tina.core.log.LogPrinter.v(Constants.TAG, "getting filename from content-location");
-				
+
 				int index = decodedContentLocation.lastIndexOf('/') + 1;
 				if (index > 0)
 				{
@@ -201,7 +217,7 @@ public class Helpers
 				}
 			}
 		}
-		
+
 		// If all the other http-related approaches failed, use the plain uri
 		if (filename == null)
 		{
@@ -213,26 +229,26 @@ public class Helpers
 				{
 					//#debug verbose
 					base.tina.core.log.LogPrinter.v(Constants.TAG, "getting filename from uri");
-					
+
 					filename = decodedUrl.substring(index);
 				}
 			}
 		}
-		
+
 		// Finally, if couldn't get filename from URI, get a generic filename
 		if (filename == null)
 		{
 			//#debug verbose
 			base.tina.core.log.LogPrinter.v(Constants.TAG, "using default filename");
-			
+
 			filename = Constants.DEFAULT_DL_FILENAME;
 		}
-		
+
 		filename = filename.replaceAll("[^a-zA-Z0-9\\.\\-_]+", "_");
-		
+
 		return filename;
 	}
-	
+
 	private static String chooseExtensionFromMimeType(String mimeType, boolean useDefaults) {
 		String extension = null;
 		if (mimeType != null)
@@ -276,7 +292,7 @@ public class Helpers
 		}
 		return extension;
 	}
-	
+
 	private static String chooseExtensionFromFilename(String mimeType, int destination, String filename, int dotIndex) {
 		String extension = null;
 		if (mimeType != null)
@@ -308,27 +324,21 @@ public class Helpers
 		}
 		return extension;
 	}
-	
+
 	private static String chooseUniqueFilename(int destination, String filename, String extension, boolean recoveryDir) {
 		String fullFilename = filename + extension;
 		if (!new File(fullFilename).exists() && !recoveryDir) { return fullFilename; }
 		filename = filename + Constants.FILENAME_SEQUENCE_SEPARATOR;
 		/*
 		 * This number is used to generate partially randomized filenames to
-		 * avoid
-		 * collisions.
-		 * It starts at 1.
-		 * The next 9 iterations increment it by 1 at a time (up to 10).
-		 * The next 9 iterations increment it by 1 to 10 (random) at a time.
-		 * The next 9 iterations increment it by 1 to 100 (random) at a time.
-		 * ... Up to the point where it increases by 100000000 at a time.
-		 * (the maximum value that can be reached is 1000000000)
-		 * As soon as a number is reached that generates a filename that doesn't
-		 * exist,
-		 * that filename is used.
-		 * If the filename coming in is [base].[ext], the generated filenames
-		 * are
-		 * [base]-[sequence].[ext].
+		 * avoid collisions. It starts at 1. The next 9 iterations increment it
+		 * by 1 at a time (up to 10). The next 9 iterations increment it by 1 to
+		 * 10 (random) at a time. The next 9 iterations increment it by 1 to 100
+		 * (random) at a time. ... Up to the point where it increases by
+		 * 100000000 at a time. (the maximum value that can be reached is
+		 * 1000000000) As soon as a number is reached that generates a filename
+		 * that doesn't exist, that filename is used. If the filename coming in
+		 * is [base].[ext], the generated filenames are [base]-[sequence].[ext].
 		 */
 		int sequence = 1;
 		for (int magnitude = 1; magnitude < 1000000000; magnitude *= 10)
@@ -344,13 +354,13 @@ public class Helpers
 		}
 		return null;
 	}
-	
+
 	/**
-	 * Deletes purgeable files from the cache partition. This also deletes
-	 * the matching database entries. Files are deleted in LRU order until
-	 * the total byte size is greater than targetBytes.
+	 * Deletes purgeable files from the cache partition. This also deletes the
+	 * matching database entries. Files are deleted in LRU order until the total
+	 * byte size is greater than targetBytes.
 	 */
-	
+
 	/**
 	 * Returns whether the network is available
 	 */
@@ -381,7 +391,7 @@ public class Helpers
 		base.tina.core.log.LogPrinter.v(Constants.TAG, "network is not available");
 		return false;
 	}
-	
+
 	/**
 	 * Returns whether the network is roaming
 	 */
@@ -418,7 +428,7 @@ public class Helpers
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Checks whether the filename looks legitimate
 	 */
@@ -426,7 +436,7 @@ public class Helpers
 		File dir = new File(filename).getParentFile();
 		return dir.equals(Environment.getDownloadCacheDirectory()) || dir.equals(new File(Environment.getExternalStorageDirectory() + Constants.DEFAULT_DL_SUBDIR));
 	}
-	
+
 	/**
 	 * Checks whether this looks like a legitimate selection parameter
 	 */
@@ -444,9 +454,9 @@ public class Helpers
 			base.tina.core.log.LogPrinter.d(Constants.TAG, "invalid selection [" + selection + "] triggered " + ex);
 			throw ex;
 		}
-		
+
 	}
-	
+
 	// expression <- ( expression ) | statement [AND_OR ( expression ) | statement] *
 	//             | statement [AND_OR expression]*
 	private static void parseExpression(Lexer lexer) {
@@ -472,14 +482,14 @@ public class Helpers
 			lexer.advance();
 		}
 	}
-	
+
 	// statement <- COLUMN COMPARE VALUE
 	//            | COLUMN IS NULL
 	private static void parseStatement(Lexer lexer) {
 		// both possibilities start with COLUMN
 		if (lexer.currentToken() != Lexer.TOKEN_COLUMN) { throw new IllegalArgumentException("syntax error, expected column name"); }
 		lexer.advance();
-		
+
 		// statement <- COLUMN COMPARE VALUE
 		if (lexer.currentToken() == Lexer.TOKEN_COMPARE)
 		{
@@ -488,7 +498,7 @@ public class Helpers
 			lexer.advance();
 			return;
 		}
-		
+
 		// statement <- COLUMN IS NULL
 		if (lexer.currentToken() == Lexer.TOKEN_IS)
 		{
@@ -497,62 +507,63 @@ public class Helpers
 			lexer.advance();
 			return;
 		}
-		
+
 		// didn't get anything good after COLUMN
 		throw new IllegalArgumentException("syntax error after column name");
 	}
-	
+
 	/**
 	 * A simple lexer that recognizes the words of our restricted subset of SQL
 	 * where clauses
 	 */
 	private static class Lexer
 	{
-		public static final int   TOKEN_START       = 0;
-		public static final int   TOKEN_OPEN_PAREN  = 1;
-		public static final int   TOKEN_CLOSE_PAREN = 2;
-		public static final int   TOKEN_AND_OR      = 3;
-		public static final int   TOKEN_COLUMN      = 4;
-		public static final int   TOKEN_COMPARE     = 5;
-		public static final int   TOKEN_VALUE       = 6;
-		public static final int   TOKEN_IS          = 7;
-		public static final int   TOKEN_NULL        = 8;
-		public static final int   TOKEN_END         = 9;
-		
-		private final String      mSelection;
-		private final Set<String> mAllowedColumns;
-		private int               mOffset           = 0;
-		private int               mCurrentToken     = TOKEN_START;
-		private final char[]      mChars;
-		
-		public Lexer(String selection, Set<String> allowedColumns) {
+		public static final int		TOKEN_START			= 0;
+		public static final int		TOKEN_OPEN_PAREN	= 1;
+		public static final int		TOKEN_CLOSE_PAREN	= 2;
+		public static final int		TOKEN_AND_OR		= 3;
+		public static final int		TOKEN_COLUMN		= 4;
+		public static final int		TOKEN_COMPARE		= 5;
+		public static final int		TOKEN_VALUE			= 6;
+		public static final int		TOKEN_IS			= 7;
+		public static final int		TOKEN_NULL			= 8;
+		public static final int		TOKEN_END			= 9;
+
+		private final String		mSelection;
+		private final Set<String>	mAllowedColumns;
+		private int					mOffset				= 0;
+		private int					mCurrentToken		= TOKEN_START;
+		private final char[]		mChars;
+
+		public Lexer(String selection, Set<String> allowedColumns)
+		{
 			mSelection = selection;
 			mAllowedColumns = allowedColumns;
 			mChars = new char[mSelection.length()];
 			mSelection.getChars(0, mChars.length, mChars, 0);
 			advance();
 		}
-		
+
 		public int currentToken() {
 			return mCurrentToken;
 		}
-		
+
 		public void advance() {
 			char[] chars = mChars;
-			
+
 			// consume whitespace
 			while (mOffset < chars.length && chars[mOffset] == ' ')
 			{
 				++mOffset;
 			}
-			
+
 			// end of input
 			if (mOffset == chars.length)
 			{
 				mCurrentToken = TOKEN_END;
 				return;
 			}
-			
+
 			// "("
 			if (chars[mOffset] == '(')
 			{
@@ -560,7 +571,7 @@ public class Helpers
 				mCurrentToken = TOKEN_OPEN_PAREN;
 				return;
 			}
-			
+
 			// ")"
 			if (chars[mOffset] == ')')
 			{
@@ -568,7 +579,7 @@ public class Helpers
 				mCurrentToken = TOKEN_CLOSE_PAREN;
 				return;
 			}
-			
+
 			// "?"
 			if (chars[mOffset] == '?')
 			{
@@ -576,7 +587,7 @@ public class Helpers
 				mCurrentToken = TOKEN_VALUE;
 				return;
 			}
-			
+
 			// "=" and "=="
 			if (chars[mOffset] == '=')
 			{
@@ -588,7 +599,7 @@ public class Helpers
 				}
 				return;
 			}
-			
+
 			// ">" and ">="
 			if (chars[mOffset] == '>')
 			{
@@ -600,7 +611,7 @@ public class Helpers
 				}
 				return;
 			}
-			
+
 			// "<", "<=" and "<>"
 			if (chars[mOffset] == '<')
 			{
@@ -612,7 +623,7 @@ public class Helpers
 				}
 				return;
 			}
-			
+
 			// "!="
 			if (chars[mOffset] == '!')
 			{
@@ -625,7 +636,7 @@ public class Helpers
 				}
 				throw new IllegalArgumentException("Unexpected character after !");
 			}
-			
+
 			// columns and keywords
 			// first look for anything that looks like an identifier or a keyword
 			//     and then recognize the individual words.
@@ -665,7 +676,7 @@ public class Helpers
 				}
 				throw new IllegalArgumentException("unrecognized column or keyword");
 			}
-			
+
 			// quoted strings
 			if (chars[mOffset] == '\'')
 			{
@@ -690,15 +701,15 @@ public class Helpers
 				mCurrentToken = TOKEN_VALUE;
 				return;
 			}
-			
+
 			// anything we don't recognize
 			throw new IllegalArgumentException("illegal character");
 		}
-		
+
 		private static final boolean isIdentifierStart(char c) {
 			return c == '_' || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
 		}
-		
+
 		private static final boolean isIdentifierChar(char c) {
 			return c == '_' || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
 		}

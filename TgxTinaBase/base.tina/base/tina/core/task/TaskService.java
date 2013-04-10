@@ -1,4 +1,19 @@
-package base.tina.core.task;
+ /*******************************************************************************
+  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  * http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *******************************************************************************/
+ package base.tina.core.task;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -37,9 +52,9 @@ import base.tina.core.task.infc.ITaskWakeTimer;
  */
 
 public class TaskService
-        implements
-        Comparator<Task>,
-        IDisposable
+				implements
+				Comparator<Task>,
+				IDisposable
 {
 	final static byte                        SERVICE_TASK_INIT      = -1;
 	final static byte                        SERVICE_PROCESSING     = SERVICE_TASK_INIT + 1;
@@ -112,8 +127,10 @@ public class TaskService
 	@Override
 	public final int compare(Task task1, Task task2) {
 		int result = 0;
+		long dT = task1.doTime - task2.doTime;
+		result = dT < 0 ? -1 : dT > 0 ? 1 : 0;
+		if (result != 0) return result;
 		result = task1.priority > task2.priority ? -1 : task1.priority < task2.priority ? 1 : task1.inQueueIndex < task2.inQueueIndex ? -1 : task1.inQueueIndex > task2.inQueueIndex ? 1 : 0;
-		result = task1.doTime == task2.doTime ? result : task1.doTime < task2.doTime ? -1 : 1;
 		if (result == 0) result = task1.hashCode() - task2.hashCode();
 		return result;
 	}
@@ -194,7 +211,6 @@ public class TaskService
 		base.tina.core.log.LogPrinter.d(null, "offer: " + success);
 		return success;
 	}
-	
 	public final boolean requestService(Task task, boolean isSchedule, int timelimit, long delayTimeMills, byte retryLimit, Object attachment, ITaskProgress progress, int timeOutSecound, ITaskTimeout<?> taskTimeout, int bindSerial) {
 		if (task == null) throw new NullPointerException();
 		task.timeLimit = timelimit;
@@ -351,6 +367,7 @@ public class TaskService
 		base.tina.core.log.LogPrinter.i(null, receive.hasError() ? "exCaught : " : "to handle : " + receive);
 		return receive.hasError() ? listener.exceptionCaught(receive, this) : listener.ioHandle(receive, this);
 	}
+ 
 	
 	private final class Processor
 	        extends
@@ -528,8 +545,8 @@ public class TaskService
 		}
 		
 		final class WorkerFactory
-		        implements
-		        ThreadFactory
+						implements
+						ThreadFactory
 		{
 			final AtomicInteger id;
 			

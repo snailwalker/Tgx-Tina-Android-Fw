@@ -1,4 +1,19 @@
-package base.tina.core.task;
+ /*******************************************************************************
+  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  * http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  *******************************************************************************/
+ package base.tina.core.task;
 
 import java.util.Comparator;
 import java.util.NoSuchElementException;
@@ -212,12 +227,12 @@ public class ScheduleQueue<E extends Task>
 					{
 						E x = pollFirst();
 						assert x != null;
-
+						if (x == null) throw new NullPointerException("Check TreeSet.remove -> Compare(t1,t2)!");
 						if (!isEmpty()) // 当此Queue作为单例并未由多个消费者进行并发操作时 本块代码无价值~
 						available.signalAll();
 						toWakeUpAbsoluteTime.set(-1);
 						// update delay time
-						if (x.offTime > 0)
+						if (x != null && x.offTime > 0)
 						{
 							x.doTime += x.offTime;
 							x.offTime = 0;
@@ -227,6 +242,7 @@ public class ScheduleQueue<E extends Task>
 					}
 					else
 					{
+						priorityIncrease.set(1);
 						toWakeUpAbsoluteTime.set(first.doTime);
 						service.setScheduleAlarmTime(first.doTime);
 						available.awaitNanos(delay);

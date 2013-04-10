@@ -1,3 +1,18 @@
+/*******************************************************************************
+ * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *******************************************************************************/
 package com.tgx.tina.android.plugin.downloader;
 
 import java.io.File;
@@ -21,89 +36,89 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Process;
 
-
 /**
  * Performs the background downloads requested by applications that use the
  * Downloads provider.
  */
 public class DownloadService
-        extends
-        Service
+				extends
+				Service
 {
-	
+
 	/* ------------ Constants ------------ */
-	
+
 	/* ------------ Members ------------ */
-	
+
 	/** Observer to get notified when the content observer's data changes */
-	private DownloadManagerContentObserver mObserver;
-	
+	private DownloadManagerContentObserver	mObserver;
+
 	/** Class to handle Notification Manager updates */
-	private DownloadNotification           mNotifier;
-	
+	private DownloadNotification			mNotifier;
+
 	/**
 	 * The Service's view of the list of downloads. This is kept independently
-	 * from the content provider, and the Service only initiates downloads
-	 * based on this data, so that it can deal with situation where the data
-	 * in the content provider changes or disappears.
+	 * from the content provider, and the Service only initiates downloads based
+	 * on this data, so that it can deal with situation where the data in the
+	 * content provider changes or disappears.
 	 */
-	private ArrayList<DownloadInfo>        mDownloads;
-	
+	private ArrayList<DownloadInfo>			mDownloads;
+
 	/**
 	 * The thread that updates the internal download list from the content
 	 * provider.
 	 */
-	private UpdateThread                   mUpdateThread;
-	
+	private UpdateThread					mUpdateThread;
+
 	/**
 	 * Whether the internal download list should be updated from the content
 	 * provider.
 	 */
-	private boolean                        mPendingUpdate;
-	
+	private boolean							mPendingUpdate;
+
 	/**
 	 * Array used when extracting strings from content provider
 	 */
-	private CharArrayBuffer                oldChars;
-	
+	private CharArrayBuffer					oldChars;
+
 	/**
 	 * Array used when extracting strings from content provider
 	 */
-	private CharArrayBuffer                mNewChars;
-	
+	private CharArrayBuffer					mNewChars;
+
 	/* ------------ Inner Classes ------------ */
-	
+
 	/**
 	 * Receives notifications when the data in the content provider changes
 	 */
 	private class DownloadManagerContentObserver
-	        extends
-	        ContentObserver
+					extends
+					ContentObserver
 	{
-		
-		public DownloadManagerContentObserver() {
+
+		public DownloadManagerContentObserver()
+		{
 			super(new Handler());
 		}
-		
+
 		/**
-		 * Receives notification when the data in the observed content
-		 * provider changes.
+		 * Receives notification when the data in the observed content provider
+		 * changes.
 		 */
 		public void onChange(final boolean selfChange) {
 			//#debug verbose
 			base.tina.core.log.LogPrinter.v(Constants.TAG, "Service ContentObserver received notification");
 			updateFromProvider();
 		}
-		
+
 	}
-	
+
 	/**
-	 * Gets called back when the connection to the media
-	 * scanner is established or lost.
+	 * Gets called back when the connection to the media scanner is established
+	 * or lost.
 	 */
-	
+
 	/* ------------ Methods ------------ */
-	
+
 	/**
 	 * Returns an IBinder instance when someone wants to connect to this
 	 * service. Binding to this service is not allowed.
@@ -113,7 +128,7 @@ public class DownloadService
 	public IBinder onBind(Intent i) {
 		throw new UnsupportedOperationException("Cannot bind to Download Manager Service");
 	}
-	
+
 	/**
 	 * Initializes the service when it is first created
 	 */
@@ -121,21 +136,21 @@ public class DownloadService
 		super.onCreate();
 		//#debug verbose
 		base.tina.core.log.LogPrinter.v(Constants.TAG, "Service onCreate");
-		
+
 		mDownloads = new ArrayList<DownloadInfo>();
-		
+
 		mObserver = new DownloadManagerContentObserver();
 		getContentResolver().registerContentObserver(GlobalDownload.CONTENT_URI, true, mObserver);
-		
+
 		mNotifier = new DownloadNotification(this);
 		mNotifier.mNotificationMgr.cancelAll();
 		mNotifier.updateNotification();
-		
+
 		trimDatabase();
 		removeSpuriousFiles();
 		updateFromProvider();
 	}
-	
+
 	/**
 	 * Responds to a call to startService
 	 */
@@ -145,7 +160,7 @@ public class DownloadService
 		base.tina.core.log.LogPrinter.v(Constants.TAG, "Service onStart");
 		updateFromProvider();
 	}
-	
+
 	/**
 	 * Cleans up when the service is destroyed
 	 */
@@ -155,7 +170,7 @@ public class DownloadService
 		base.tina.core.log.LogPrinter.v(Constants.TAG, "Service onDestroy");
 		super.onDestroy();
 	}
-	
+
 	/**
 	 * Parses data from the content provider into private array
 	 */
@@ -170,18 +185,19 @@ public class DownloadService
 			}
 		}
 	}
-	
+
 	private class UpdateThread
-	        extends
-	        Thread
+					extends
+					Thread
 	{
-		public UpdateThread() {
+		public UpdateThread()
+		{
 			super("Download Service");
 		}
-		
+
 		public void run() {
 			Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-			
+
 			boolean keepService = false;
 			// for each update from the database, remember which download is
 			// supposed to get restarted soonest in the future
@@ -223,48 +239,40 @@ public class DownloadService
 				boolean networkAvailable = Helpers.isNetworkAvailable(DownloadService.this);
 				boolean networkRoaming = Helpers.isNetworkRoaming(DownloadService.this);
 				long now = System.currentTimeMillis();
-				
+
 				Cursor cursor = getContentResolver().query(GlobalDownload.CONTENT_URI, null, null, null, GlobalDownload._ID);
-				
+
 				if (cursor == null)
 				{
 					// TODO: this doesn't look right, it'd leave the loop in an inconsistent state
 					return;
 				}
-				
+
 				cursor.moveToFirst();
-				
+
 				int arrayPos = 0;
-				
+
 				keepService = false;
 				wakeUp = Long.MAX_VALUE;
-				
+
 				boolean isAfterLast = cursor.isAfterLast();
-				
+
 				int idColumn = cursor.getColumnIndexOrThrow(GlobalDownload._ID);
-				
+
 				/*
 				 * Walk the cursor and the local array to keep them in sync. The
-				 * key
-				 * to the algorithm is that the ids are unique and sorted both
-				 * in
-				 * the cursor and in the array, so that they can be processed in
-				 * order in both sources at the same time: at each step, both
-				 * sources point to the lowest id that hasn't been processed
-				 * from
-				 * that source, and the algorithm processes the lowest id from
-				 * those two possibilities.
-				 * At each step:
-				 * -If the array contains an entry that's not in the cursor,
-				 * remove the
-				 * entry, move to next entry in the array.
-				 * -If the array contains an entry that's in the cursor, nothing
-				 * to do,
-				 * move to next cursor row and next array entry.
-				 * -If the cursor contains an entry that's not in the array,
-				 * insert
-				 * a new entry in the array, move to next cursor row and next
-				 * array entry.
+				 * key to the algorithm is that the ids are unique and sorted
+				 * both in the cursor and in the array, so that they can be
+				 * processed in order in both sources at the same time: at each
+				 * step, both sources point to the lowest id that hasn't been
+				 * processed from that source, and the algorithm processes the
+				 * lowest id from those two possibilities. At each step: -If the
+				 * array contains an entry that's not in the cursor, remove the
+				 * entry, move to next entry in the array. -If the array
+				 * contains an entry that's in the cursor, nothing to do, move
+				 * to next cursor row and next array entry. -If the cursor
+				 * contains an entry that's not in the array, insert a new entry
+				 * in the array, move to next cursor row and next array entry.
 				 */
 				while (!isAfterLast || arrayPos < mDownloads.size())
 				{
@@ -282,7 +290,7 @@ public class DownloadService
 					else
 					{
 						int id = cursor.getInt(idColumn);
-						
+
 						if (arrayPos == mDownloads.size())
 						{
 							insertDownload(cursor, arrayPos, networkAvailable, networkRoaming, now);
@@ -308,7 +316,7 @@ public class DownloadService
 						else
 						{
 							int arrayId = mDownloads.get(arrayPos).mId;
-							
+
 							if (arrayId < id)
 							{
 								// The array entry isn't in the cursor
@@ -343,7 +351,7 @@ public class DownloadService
 								//#debug verbose
 								base.tina.core.log.LogPrinter.v(Constants.TAG, "Array update: inserting " + id + " @ " + arrayPos);
 								insertDownload(cursor, arrayPos, networkAvailable, networkRoaming, now);
-								
+
 								if (visibleNotification(arrayPos))
 								{
 									keepService = true;
@@ -364,14 +372,14 @@ public class DownloadService
 						}
 					}
 				}
-				
+
 				mNotifier.updateNotification();
-				
+
 				cursor.close();
 			}
 		}
 	}
-	
+
 	/**
 	 * Removes files that may have been left behind in the cache directory
 	 */
@@ -396,9 +404,9 @@ public class DownloadService
 			}
 			fileSet.add(files[i].getPath());
 		}
-		
+
 		Cursor cursor = getContentResolver().query(GlobalDownload.CONTENT_URI, new String[] {
-			GlobalDownload._DATA
+						GlobalDownload._DATA
 		}, null, null, null);
 		if (cursor != null)
 		{
@@ -421,13 +429,13 @@ public class DownloadService
 			new File(filename).delete();
 		}
 	}
-	
+
 	/**
 	 * Drops old rows from the database to prevent it from growing too large
 	 */
 	private void trimDatabase() {
 		Cursor cursor = getContentResolver().query(GlobalDownload.CONTENT_URI, new String[] {
-			GlobalDownload._ID
+						GlobalDownload._ID
 		}, GlobalDownload.COLUMN_STATUS + " >= '200'", null, GlobalDownload.COLUMN_LAST_MODIFICATION);
 		if (cursor == null)
 		{
@@ -452,7 +460,7 @@ public class DownloadService
 		}
 		cursor.close();
 	}
-	
+
 	/**
 	 * Keeps a local copy of the info about a download, and initiates the
 	 * download if appropriate.
@@ -461,8 +469,18 @@ public class DownloadService
 		int statusColumn = cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_STATUS);
 		int failedColumn = cursor.getColumnIndexOrThrow(Constants.FAILED_CONNECTIONS);
 		int retryRedirect = cursor.getInt(cursor.getColumnIndexOrThrow(Constants.RETRY_AFTER_X_REDIRECT_COUNT));
-		DownloadInfo info = new DownloadInfo(cursor.getInt(cursor.getColumnIndexOrThrow(GlobalDownload._ID)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_URI)), cursor.getInt(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_NO_INTEGRITY)) == 1, cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_FILE_NAME_HINT)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload._DATA)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_MIME_TYPE)), cursor.getInt(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_DESTINATION)), cursor.getInt(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_VISIBILITY)), cursor.getInt(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_CONTROL)), cursor.getInt(statusColumn), cursor.getInt(failedColumn), retryRedirect & 0xfffffff, retryRedirect >> 28, cursor.getLong(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_LAST_MODIFICATION)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_NOTIFICATION_PACKAGE)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_NOTIFICATION_CLASS)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_NOTIFICATION_EXTRAS)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_COOKIE_DATA)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_USER_AGENT)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_REFERER)), cursor.getInt(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_TOTAL_BYTES)), cursor.getInt(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_CURRENT_BYTES)), cursor.getString(cursor.getColumnIndexOrThrow(Constants.ETAG)), cursor.getInt(cursor.getColumnIndexOrThrow(Constants.MEDIA_SCANNED)) == 1);
-		
+		DownloadInfo info = new DownloadInfo(cursor.getInt(cursor.getColumnIndexOrThrow(GlobalDownload._ID)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_URI)), cursor.getInt(cursor
+						.getColumnIndexOrThrow(GlobalDownload.COLUMN_NO_INTEGRITY)) == 1, cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_FILE_NAME_HINT)), cursor.getString(cursor
+						.getColumnIndexOrThrow(GlobalDownload._DATA)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_MIME_TYPE)), cursor.getInt(cursor
+						.getColumnIndexOrThrow(GlobalDownload.COLUMN_DESTINATION)), cursor.getInt(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_VISIBILITY)), cursor.getInt(cursor
+						.getColumnIndexOrThrow(GlobalDownload.COLUMN_CONTROL)), cursor.getInt(statusColumn), cursor.getInt(failedColumn), retryRedirect & 0xfffffff, retryRedirect >> 28, cursor.getLong(cursor
+						.getColumnIndexOrThrow(GlobalDownload.COLUMN_LAST_MODIFICATION)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_NOTIFICATION_PACKAGE)), cursor.getString(cursor
+						.getColumnIndexOrThrow(GlobalDownload.COLUMN_NOTIFICATION_CLASS)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_NOTIFICATION_EXTRAS)), cursor.getString(cursor
+						.getColumnIndexOrThrow(GlobalDownload.COLUMN_COOKIE_DATA)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_USER_AGENT)), cursor.getString(cursor
+						.getColumnIndexOrThrow(GlobalDownload.COLUMN_REFERER)), cursor.getInt(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_TOTAL_BYTES)), cursor.getInt(cursor
+						.getColumnIndexOrThrow(GlobalDownload.COLUMN_CURRENT_BYTES)), cursor.getString(cursor.getColumnIndexOrThrow(Constants.ETAG)),
+						cursor.getInt(cursor.getColumnIndexOrThrow(Constants.MEDIA_SCANNED)) == 1);
+
 		//#ifdef debug
 		//#if debug==0
 		base.tina.core.log.LogPrinter.v(Constants.TAG, "Service adding new entry");
@@ -491,9 +509,9 @@ public class DownloadService
 		base.tina.core.log.LogPrinter.v(Constants.TAG, "SCANNED : " + info.mMediaScanned);
 		//#endif
 		//#endif
-		
+
 		mDownloads.add(arrayPos, info);
-		
+
 		if (info.canUseNetwork(networkAvailable, networkRoaming))
 		{
 			if (info.isReadyToStart(now))
@@ -525,7 +543,7 @@ public class DownloadService
 			}
 		}
 	}
-	
+
 	/**
 	 * Updates the local copy of the info about a download.
 	 */
@@ -570,7 +588,7 @@ public class DownloadService
 		info.mCurrentBytes = cursor.getInt(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_CURRENT_BYTES));
 		info.mETag = stringFromCursor(info.mETag, cursor, Constants.ETAG);
 		info.mMediaScanned = cursor.getInt(cursor.getColumnIndexOrThrow(Constants.MEDIA_SCANNED)) == 1;
-		
+
 		if (info.canUseNetwork(networkAvailable, networkRoaming))
 		{
 			if (info.isReadyToRestart(now))
@@ -588,10 +606,10 @@ public class DownloadService
 			}
 		}
 	}
-	
+
 	/**
-	 * Returns a String that holds the current value of the column,
-	 * optimizing for the case where the value hasn't changed.
+	 * Returns a String that holds the current value of the column, optimizing
+	 * for the case where the value hasn't changed.
 	 */
 	private String stringFromCursor(String old, Cursor cursor, String column) {
 		int index = cursor.getColumnIndexOrThrow(column);
@@ -616,7 +634,7 @@ public class DownloadService
 		}
 		return old;
 	}
-	
+
 	/**
 	 * Removes the local copy of the info about a download.
 	 */
@@ -631,17 +649,16 @@ public class DownloadService
 			new File(info.mFileName).delete();
 		}
 		mNotifier.mNotificationMgr.cancel(info.mId);
-		
+
 		mDownloads.remove(arrayPos);
 	}
-	
+
 	/**
-	 * Returns the amount of time (as measured from the "now" parameter)
-	 * at which a download will be active.
-	 * 0 = immediately - service should stick around to handle this download.
-	 * -1 = never - service can go away without ever waking up.
-	 * positive value - service must wake up in the future, as specified in ms
-	 * from "now"
+	 * Returns the amount of time (as measured from the "now" parameter) at
+	 * which a download will be active. 0 = immediately - service should stick
+	 * around to handle this download. -1 = never - service can go away without
+	 * ever waking up. positive value - service must wake up in the future, as
+	 * specified in ms from "now"
 	 */
 	private long nextAction(int arrayPos, long now) {
 		DownloadInfo info = (DownloadInfo) mDownloads.get(arrayPos);
@@ -652,7 +669,7 @@ public class DownloadService
 		if (when <= now) { return 0; }
 		return when - now;
 	}
-	
+
 	/**
 	 * Returns whether there's a visible notification for this download
 	 */
@@ -660,5 +677,5 @@ public class DownloadService
 		DownloadInfo info = (DownloadInfo) mDownloads.get(arrayPos);
 		return info.hasCompletionNotification();
 	}
-	
+
 }

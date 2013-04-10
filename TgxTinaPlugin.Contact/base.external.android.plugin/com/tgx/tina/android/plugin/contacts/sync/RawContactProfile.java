@@ -1,3 +1,18 @@
+/*******************************************************************************
+ * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *******************************************************************************/
 package com.tgx.tina.android.plugin.contacts.sync;
 
 import android.provider.ContactsContract;
@@ -15,8 +30,8 @@ import com.tgx.tina.android.plugin.contacts.base.Profile;
  * @author Zhangzhuo
  */
 public class RawContactProfile
-		extends
-		Profile
+				extends
+				Profile
 {
 	public RawContactProfile()
 	{
@@ -159,8 +174,9 @@ public class RawContactProfile
 	public String vCardEncode(String version, String charSet, boolean encodePhoto) {
 		boolean hasData = false;
 		common = new String[] {
-						"CHARSET=" + charSet,
-						"ENCODING=QUOTED-PRINTABLE" };
+						"CHARSET=" + charSet ,
+						"ENCODING=QUOTED-PRINTABLE"
+		};
 		StringBuffer buffer = new StringBuffer();
 		addField(buffer, "BEGIN", null, "VCARD");
 		addField(buffer, "VERSION", null, version);
@@ -240,7 +256,9 @@ public class RawContactProfile
 		hasData = addField(buffer, "GENDER", null, gender) || hasData;
 		if (encodePhoto)
 		{
-			hasData = addField(buffer, "PHOTO", new String[] { "ENCODING=b" }, photoEncoded) || hasData;
+			hasData = addField(buffer, "PHOTO", new String[] {
+				"ENCODING=b"
+			}, photoEncoded) || hasData;
 		}
 		hasData = vCardEncodeEx(buffer, charSet, encodePhoto) || hasData;
 		buffer.append("END:VCARD");
@@ -278,8 +296,9 @@ public class RawContactProfile
 
 	String[] fieldParser(String[] splits, int start) {
 		if (start == splits.length - 2) return new String[] {
-						"END",
-						"VCARD" };
+						"END" ,
+						"VCARD"
+		};
 		String[] fields = new String[FIELD_COUNT];
 		int begin = 0;
 
