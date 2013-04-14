@@ -21,10 +21,15 @@ public class PhonePack
 				extends
 				ProfilePack<PhoneProfile>
 {
-	public final static int	SerialNum	= ProfilePack.SerialNum + 3;
+	public final static int	SerialNum	= PhonePackSN;
 
 	@Override
 	public final int getSerialNum() {
 		return SerialNum;
+	}
+
+	@Override
+	protected ProfilePack<PhoneProfile> subInstance() {
+		return new PhonePack();
 	}
 }

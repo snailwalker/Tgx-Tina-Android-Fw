@@ -23,7 +23,7 @@ public class Constants
 {
 
 	//#debug fatal
-	public static final String	TAG								= "DownloadManager";						// Tag used for debugging/logging 
+	public static final String	TAG								= "DownloadManager";								// Tag used for debugging/logging 
 
 	/** The column that used to be used for the HTTP method of the request */
 	public static final String	RETRY_AFTER_X_REDIRECT_COUNT	= "method";
@@ -63,8 +63,8 @@ public class Constants
 	 */
 	public static final String	ACTION_HIDE						= "android.intent.action.DOWNLOAD_HIDE";
 
-	/** 通知刷新下载列表 */
-	public static final String	ACTION_LIST2					= "android.intent.action.DOWNLOAD_LIST2";
+	/** the intent that notify downloading list refresh */
+	public static final String	ACTION_LIST_REFRESH				= "android.intent.action.DOWNLOAD_LIST_REFRESH";
 	/**
 	 * The default base name for downloaded files if we can't get one at the
 	 * HTTP level
@@ -142,18 +142,18 @@ public class Constants
 	 * The minimum amount of time that the download manager accepts for a
 	 * Retry-After response header with a parameter in delta-seconds.
 	 */
-	public static final int		MIN_RETRY_AFTER					= 30;										// 30s
+	public static final int		MIN_RETRY_AFTER					= 30;												// 30s
 
 	/**
 	 * The maximum amount of time that the download manager accepts for a
 	 * Retry-After response header with a parameter in delta-seconds.
 	 */
-	public static final int		MAX_RETRY_AFTER					= 24 * 60 * 60;							// 24h
+	public static final int		MAX_RETRY_AFTER					= 24 * 60 * 60;									// 24h
 
 	/**
 	 * The maximum number of redirects.
 	 */
-	public static final int		MAX_REDIRECTS					= 5;										// can't be more than 7.
+	public static final int		MAX_REDIRECTS					= 5;												// can't be more than 7.
 
 	/**
 	 * The time between a failure and the first retry after an IOException. Each

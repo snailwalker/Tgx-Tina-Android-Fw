@@ -39,7 +39,7 @@ public class RawContactBatchWriteTask
 				ContactTask
 {
 
-	public final static int	SerialNum	= SerialDomain + 33;
+	public final static int	SerialNum	= RawContactBatchWriteTaskSN;
 	private Account			mAccount;
 
 	@Override

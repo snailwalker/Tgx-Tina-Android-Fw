@@ -24,7 +24,12 @@ public abstract class ProfilePack<T extends Profile>
 				extends
 				AbstractResult
 {
-	public final static int	SerialNum	= Profile.SerialDomain + 100;
+	public final static int		SerialNum			= Profile.SerialDomain + 100;
+	protected final static int	TContactPackSN		= SerialNum + 1;
+	protected final static int	CallPackSN			= TContactPackSN + 1;
+	protected final static int	CategoryPackSN		= CallPackSN + 1;
+	protected final static int	PhonePackSN			= CategoryPackSN + 1;
+	protected final static int	RawContactPackSN	= PhonePackSN + 1;
 
 	public ProfilePack()
 	{
@@ -36,7 +41,7 @@ public abstract class ProfilePack<T extends Profile>
 	}
 
 	@Override
-	public final void dispose() {
+	public void dispose() {
 		if (profiles != null)
 		{
 			for (Profile profile : profiles)
@@ -52,4 +57,13 @@ public abstract class ProfilePack<T extends Profile>
 
 	public Collection<T>	profiles;
 
+	@SuppressWarnings("unchecked")
+	public ProfilePack<T> clone() {
+		ProfilePack<T> pack = subInstance();
+		for (Profile p : profiles)
+			pack.profiles.add((T) p.clone());
+		return pack;
+	}
+
+	protected abstract ProfilePack<T> subInstance();
 }

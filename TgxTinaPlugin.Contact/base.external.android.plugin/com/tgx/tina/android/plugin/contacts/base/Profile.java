@@ -21,8 +21,14 @@ public abstract class Profile
 				extends
 				AbstractResult
 {
-	final protected static int	SerialDomain	= -ContactTask.SerialDomain;
-	protected int				primaryKey;									//_ID
+	final protected static int	SerialDomain		= -ContactTask.SerialDomain;
+	protected final static int	TContactProfileSN	= SerialDomain + 1;
+	protected final static int	CallLogProfileSN	= TContactProfileSN + 1;
+	protected final static int	CategoryProfileSN	= CallLogProfileSN + 1;
+	protected final static int	PhoneProfileSN		= CategoryProfileSN + 1;
+	protected final static int	RawContactProfileSN	= PhoneProfileSN + 1;
+
+	protected int				primaryKey;										//_ID
 	protected int				foreignKey;
 	protected int				externalKey;
 
@@ -33,4 +39,6 @@ public abstract class Profile
 	public int getPrimaryKey() {
 		return primaryKey;
 	}
+
+	public abstract Profile clone();
 }

@@ -24,7 +24,7 @@ public class CallLogProfile
 				Profile
 {
 
-	public final static int	SerialNum	= SerialDomain + 1;
+	public final static int	SerialNum	= CallLogProfileSN;
 
 	@Override
 	public final int getSerialNum() {
@@ -52,8 +52,10 @@ public class CallLogProfile
 
 	public LinkedList<CallEntry>	entries	= new LinkedList<CallLogProfile.CallEntry>();
 
-	public void addEntry(long duration, long date, int type) {
-		entries.add(new CallEntry(duration, date, type));
+	public CallEntry addEntry(long duration, long date, int type) {
+		CallEntry entry = new CallEntry(duration, date, type);
+		entries.add(entry);
+		return entry;
 	}
 
 	public static class CallEntry
@@ -72,11 +74,19 @@ public class CallLogProfile
 
 	@Override
 	public void dispose() {
-		entries.clear();
+		entries.clear();//由于CallEntry内部只有基本数据类型，所以不再执行profile.dispose()
 		entries = null;
 		phoneNum = null;
 		displayName = null;
 		super.dispose();
+	}
+
+	@Override
+	public Profile clone() {
+		CallLogProfile callLogProfile = new CallLogProfile(phoneNum, displayName);
+		for (CallEntry callEntry : entries)
+			callLogProfile.addEntry(callEntry.duration, callEntry.date, callEntry.type);
+		return callLogProfile;
 	}
 
 }

@@ -21,7 +21,7 @@ public class CategoryProfile
 				extends
 				Profile
 {
-	public final static int	SerialNum	= SerialDomain + 2;
+	public final static int	SerialNum	= CategoryProfileSN;
 
 	@Override
 	public final int getSerialNum() {
@@ -30,14 +30,18 @@ public class CategoryProfile
 
 	@Override
 	public int getContactID() {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public int getRawContactID() {
-		// TODO Auto-generated method stub
 		return 0;
+	}
+
+	@Override
+	public Profile clone() {
+		CategoryProfile categoryProfile = new CategoryProfile();
+		return categoryProfile;
 	}
 
 }

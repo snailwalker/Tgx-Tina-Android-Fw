@@ -109,4 +109,9 @@ public class PhoneUtil
 		String matchKey = getMinMatchKey(reverseKey);
 		return 0xFF == matchString(matchKey, toMatch);
 	}
+
+	public static boolean isMinSame(String lookupKey1, String lookupKey2) {
+		int len = Math.min(lookupKey1.length(), lookupKey2.length());
+		return (0x3FF >> (10 - len)) == matchString(lookupKey1, lookupKey2);
+	}
 }

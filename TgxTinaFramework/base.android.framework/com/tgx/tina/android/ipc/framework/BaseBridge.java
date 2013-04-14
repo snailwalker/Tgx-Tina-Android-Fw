@@ -1,19 +1,19 @@
- /*******************************************************************************
-  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
-  *
-  * Licensed under the Apache License, Version 2.0 (the "License");
-  * you may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at
-  *
-  * http://www.apache.org/licenses/LICENSE-2.0
-  *
-  * Unless required by applicable law or agreed to in writing, software
-  * distributed under the License is distributed on an "AS IS" BASIS,
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  *******************************************************************************/
- package com.tgx.tina.android.ipc.framework;
+/*******************************************************************************
+ * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *******************************************************************************/
+package com.tgx.tina.android.ipc.framework;
 
 import java.util.ArrayList;
 import java.util.Queue;
@@ -32,27 +32,27 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
 
-
 public abstract class BaseBridge
-        implements
-        ServiceConnection
+				implements
+				ServiceConnection
 {
-	protected final Context mContext;
-	private final IBridge   mIBridge;
-	private Handler         recvHandler;
-	private boolean         isBridgeOn;
-	
-	protected BaseBridge(Context context, IBridge iBridge, Handler handler) {
+	protected final Context	mContext;
+	private final IBridge	mIBridge;
+	private Handler			recvHandler;
+	private boolean			isBridgeOn;
+
+	protected BaseBridge(Context context, IBridge iBridge, Handler handler)
+	{
 		if (iBridge == null || context == null) throw new NullPointerException();
 		mContext = context;
 		mIBridge = iBridge;
 		recvHandler = handler;
 		service_action = context.getPackageName() + DefaultConsts.serviceAction + hashCode();
 	}
-	
-	private RemoteService  rServiceStub;
-	private ClientReceiver clientReceiver;
-	
+
+	private RemoteService	rServiceStub;
+	private ClientReceiver	clientReceiver;
+
 	@Override
 	public void onServiceConnected(ComponentName name, IBinder service) {
 		rServiceStub = RemoteService.Stub.asInterface(service);
@@ -74,22 +74,26 @@ public abstract class BaseBridge
 			onRemoteConnectedEx();
 		}
 	}
-	
+
 	protected abstract void onRemoteConnected();
-	
+
 	protected abstract void onRemoteConnectedEx();
-	
+
 	public void startBind(String action) {
 		if (isBridgeOn()) return;
-		String remoteBootAction = action == null || "".equalsIgnoreCase(action.trim()) ? mIBridge.remoteBootAction() : action;
-		mContext.startService(new Intent(remoteBootAction));
-		mContext.bindService(new Intent(remoteBootAction), this, Context.BIND_AUTO_CREATE);
+		if (action == null || "".equals(action.trim())) throw new IllegalArgumentException("remote_action is invaild!");
+		mContext.startService(new Intent(action));
+		mContext.bindService(new Intent(action), this, Context.BIND_AUTO_CREATE);
 	}
-	
+
+	public void startBind() {
+		startBind(mIBridge.remoteBootAction());
+	}
+
 	public void stopBind() {
 		mContext.unbindService(this);
 	}
-	
+
 	@Override
 	public void onServiceDisconnected(ComponentName name) {
 		if (clientReceiver != null)
@@ -103,32 +107,42 @@ public abstract class BaseBridge
 		//#debug verbose
 		base.tina.core.log.LogPrinter.v(null, "Bridge Disconnected");
 	}
-	
+
 	public final boolean isBridgeOn() {
 		return isBridgeOn;
 	}
-	
+
 	public final RemoteService getRemoteService() {
 		return rServiceStub;
 	}
-	
+
 	public final String tarAction() {
 		return service_action;
 	}
-	
+
+	/**
+	 * 仅能在Activity的UI-Thread中进行实现
+	 * 
+	 * @param handler
+	 */
+	public final void changeCurHandler(Handler handler) {
+		recvHandler = handler;
+	}
+
 	private final class ClientReceiver
-	        extends
-	        BroadcastReceiver
+					extends
+					BroadcastReceiver
 	{
-		
+
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			ArrayList<Bundle> bundleList = intent.getParcelableArrayListExtra("bundle");
 			LoopList:
 			for (Bundle bundle : bundleList)
 			{
-				Message msg = new Message();
+				Message msg = Message.obtain();
 				int cmd = bundle.getInt("cmd", -2);
+				boolean hasExternal = bundle.getBoolean("has_external", false);
 				msg.what = cmd;
 				msg.arg1 = DefaultConsts.NO_DATA_ARG;
 				switch (cmd) {
@@ -149,18 +163,18 @@ public abstract class BaseBridge
 						base.tina.core.log.LogPrinter.v(null, "Bridge check service status ,received!");
 						break;
 				}
-				msg.arg1 = onReceiveUpdate(cmd, bundle);
-				if (msg.arg1 == DefaultConsts.HAS_DATA_ARG) msg.setData(bundle);
+				onReceiveUpdate(cmd, bundle);
+				if (hasExternal) msg.setData(bundle);
 				if (recvHandler != null) recvHandler.sendMessage(msg);
 				else System.err.println("recevierHandler is null!");
 			}
 		}
 	}
-	
+
 	// 广播队列
-	private final Queue<Bundle> broadcastQueue = new ConcurrentLinkedQueue<Bundle>();
-	private final AtomicBoolean sentCondition  = new AtomicBoolean();
-	
+	private final Queue<Bundle>	broadcastQueue	= new ConcurrentLinkedQueue<Bundle>();
+	private final AtomicBoolean	sentCondition	= new AtomicBoolean();
+
 	/**
 	 * onStart()方法中不可调用此方法，由于动态广播系统尚未完成对接过程。必须在onRemoteConnected()之后使用
 	 * 
@@ -174,7 +188,7 @@ public abstract class BaseBridge
 		bundle.putInt("cmd", cmd);
 		sendCMD(bundle);
 	}
-	
+
 	public final void sendCMD(Bundle bundle) {
 		if (bundle != null) broadcastQueue.add(bundle);
 		if (broadcastQueue.isEmpty() || sentCondition.get()) return;
@@ -193,8 +207,8 @@ public abstract class BaseBridge
 			}
 		}
 	}
-	
-	private String service_action = "com.android.tina" + DefaultConsts.serviceAction + hashCode();
-	
-	protected abstract int onReceiveUpdate(int cmd, Bundle bundle);
+
+	private String	service_action	= "com.android.tina" + DefaultConsts.serviceAction + hashCode();
+
+	protected abstract void onReceiveUpdate(int cmd, Bundle bundle);
 }

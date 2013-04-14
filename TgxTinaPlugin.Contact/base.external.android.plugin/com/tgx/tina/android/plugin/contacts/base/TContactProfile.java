@@ -19,7 +19,7 @@ public class TContactProfile
 				extends
 				Profile
 {
-	public final static int	SerialNum	= SerialDomain + 5;
+	public final static int	SerialNum	= TContactProfileSN;
 
 	@Override
 	public int getSerialNum() {
@@ -48,6 +48,25 @@ public class TContactProfile
 	public String	phones[][];		//[count][4] | [i][0]:phoneNum 		| [i][1]:phone mime type 			| [i][2]: custom type label    | [i][3]:phone callerloc
 	public int		photo_id;
 	public int		local_raw_version;
+
+	@Override
+	public Profile clone() {
+		TContactProfile tContactProfile = new TContactProfile();
+		tContactProfile.displayName = displayName;
+		if (phones != null)
+		{
+			tContactProfile.phones = new String[phones.length][];
+			int i = 0;
+			for (String[] x : phones)
+			{
+				tContactProfile.phones[i] = new String[x.length];
+				System.arraycopy(x, 0, tContactProfile.phones[i], 0, x.length);
+				i++;
+			}
+		}
+
+		return tContactProfile;
+	}
 
 	public void addPhone(String phone, int type, String label) {
 		if (phones == null) phones = new String[1][4];

@@ -163,7 +163,7 @@ public class AndroidPrinter
 	{
 		this.context = context;
 		//#debug info
-		i(null, context.toString());
+		i(LogPrinter.LOG_TAG, context.toString());
 		selfPid = android.os.Process.myPid();
 		_instance = this;
 	}
@@ -185,7 +185,7 @@ public class AndroidPrinter
 		AndroidPrinter androidPrinter = AndroidPrinter.getIPrinter(appContext);
 		LogPrinter.setIPrinter(androidPrinter);
 		//#debug info
-		androidPrinter.i(null, androidPrinter.toString() + " /Application pid: " + android.os.Process.myPid() + " /TID: " + android.os.Process.myTid());
+		LogPrinter.i(null, androidPrinter.toString() + " /Application pid: " + android.os.Process.myPid() + " /TID: " + android.os.Process.myTid());
 	}
 
 	public final static void createByActivity(Activity activity) {
@@ -193,7 +193,7 @@ public class AndroidPrinter
 		androidPrinter.includeKill(android.os.Process.myPid());
 		LogPrinter.setIPrinter(androidPrinter);
 		//#debug info
-		androidPrinter.i(null, androidPrinter.toString() + " /Activity pid: " + android.os.Process.myPid());
+		LogPrinter.i(null, androidPrinter.toString() + " /Activity pid: " + android.os.Process.myPid());
 	}
 
 	public final static void createByService(Service service, boolean includeKill) {
@@ -201,7 +201,7 @@ public class AndroidPrinter
 		if (includeKill) androidPrinter.includeKill(android.os.Process.myPid());
 		LogPrinter.setIPrinter(androidPrinter);
 		//#debug info
-		androidPrinter.i(null, androidPrinter.toString() + " /Service pid: " + android.os.Process.myPid());
+		LogPrinter.i(null, androidPrinter.toString() + " /Service pid: " + android.os.Process.myPid());
 	}
 
 }

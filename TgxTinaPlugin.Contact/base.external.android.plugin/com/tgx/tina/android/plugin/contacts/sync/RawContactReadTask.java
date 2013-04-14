@@ -35,7 +35,7 @@ public class RawContactReadTask
 				extends
 				ContactTask
 {
-	int[]						rawContactIDs;
+	protected int[]				rawContactIDs;
 	private TaskProgressType	progressType	= TaskProgressType.horizontal;
 
 	public RawContactReadTask(Context context, int[] rawContactIDs)
@@ -53,7 +53,7 @@ public class RawContactReadTask
 		super.dispose();
 	}
 
-	public final static int	SerialNum	= SerialDomain + 30;
+	public final static int	SerialNum	= RawContactReadTaskSN;
 
 	@Override
 	public int getSerialNum() {
@@ -64,18 +64,22 @@ public class RawContactReadTask
 		progressType = type;
 	}
 
-	SparseArray<RawContactProfile>	profileMap;
+	protected SparseArray<RawContactProfile>	profileMap;
+
+	protected void initProfileMap() {
+		for (int i = 0; i < rawContactIDs.length; i++)
+		{
+			RawContactProfile profile = new RawContactProfile(rawContactIDs[i]);
+			profileMap.put(rawContactIDs[i], profile);
+		}
+	}
 
 	protected RawContactPack getPack() {
 		RawContactPack profilePack = new RawContactPack();
 		final String[] SELECTION_ARGS = new String[rawContactIDs.length];
 		for (int i = 0; i < rawContactIDs.length; i++)
 			SELECTION_ARGS[i] = String.valueOf(rawContactIDs[i]);
-		for (int i = 0; i < rawContactIDs.length; i++)
-		{
-			RawContactProfile profile = new RawContactProfile(rawContactIDs[i]);
-			profileMap.put(rawContactIDs[i], profile);
-		}
+		initProfileMap();
 		int rawContactID, contactID, lastRawContatcID = -1;
 		RawContactProfile profile = null;
 		StringBuffer sqlWhere = new StringBuffer();

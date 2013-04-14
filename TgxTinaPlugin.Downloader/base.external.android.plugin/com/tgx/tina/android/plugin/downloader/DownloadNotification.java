@@ -20,7 +20,6 @@ import java.util.HashMap;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 
 /**
  * This class handles the updating of the Notification Manager for the cases
@@ -104,8 +103,9 @@ class DownloadNotification
 	 * Update the notification ui.
 	 */
 	public void updateNotification() {
-		Log.d("test", "updateNotification");
-		Intent intent = new Intent(Constants.ACTION_LIST2);
+		//#debug 
+		base.tina.core.log.LogPrinter.d(Constants.TAG, "updateNotification");
+		Intent intent = new Intent(Constants.ACTION_LIST_REFRESH);
 		mContext.sendBroadcast(intent);
 		//        updateActiveNotification();
 		//        updateCompletedNotification();

@@ -19,10 +19,15 @@ public class TContactPack
 				extends
 				ProfilePack<TContactProfile>
 {
-	public final static int	SerialNum	= ProfilePack.SerialNum + 5;
+	public final static int	SerialNum	= ProfilePack.TContactPackSN;
 
 	@Override
 	public int getSerialNum() {
 		return SerialNum;
+	}
+
+	@Override
+	protected ProfilePack<TContactProfile> subInstance() {
+		return new TContactPack();
 	}
 }

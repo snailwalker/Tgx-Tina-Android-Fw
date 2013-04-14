@@ -398,4 +398,9 @@ public class TableDownload
 		return true;
 	}
 
+	@Override
+	public boolean addData(SQLiteDatabase db, Context context) {
+		return true;
+	}
+
 }

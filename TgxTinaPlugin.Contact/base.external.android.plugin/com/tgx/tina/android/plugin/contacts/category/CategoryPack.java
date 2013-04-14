@@ -21,10 +21,15 @@ public class CategoryPack
 				extends
 				ProfilePack<CategoryProfile>
 {
-	public final static int	SerialNum	= ProfilePack.SerialNum + 2;
+	public final static int	SerialNum	= CategoryPackSN;
 
 	@Override
 	public final int getSerialNum() {
 		return SerialNum;
+	}
+
+	@Override
+	protected ProfilePack<CategoryProfile> subInstance() {
+		return new CategoryPack();
 	}
 }

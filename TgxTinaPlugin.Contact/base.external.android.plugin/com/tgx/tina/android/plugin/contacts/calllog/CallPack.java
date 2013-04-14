@@ -21,11 +21,24 @@ public class CallPack
 				extends
 				ProfilePack<CallLogProfile>
 {
-	public final static int	SerialNum	= ProfilePack.SerialNum + 1;
+	public CallPack(int lastID)
+	{
+		this.lastID = lastID;
+	}
+
+	public final static int	SerialNum	= CallPackSN;
 
 	@Override
 	public final int getSerialNum()
 	{
 		return SerialNum;
 	}
+
+	@Override
+	protected ProfilePack<CallLogProfile> subInstance() {
+		return new CallPack(lastID);
+	}
+
+	public int	lastID;
+
 }

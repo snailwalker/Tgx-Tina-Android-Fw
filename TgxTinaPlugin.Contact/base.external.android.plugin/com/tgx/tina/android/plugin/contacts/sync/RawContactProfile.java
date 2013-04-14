@@ -15,6 +15,8 @@
  *******************************************************************************/
 package com.tgx.tina.android.plugin.contacts.sync;
 
+import java.util.Locale;
+
 import android.provider.ContactsContract;
 import base.tina.external.io.IoUtil;
 
@@ -68,10 +70,10 @@ public class RawContactProfile
 		foreignKey = contactID;
 	}
 
-	public final static int	SerialNum	= SerialDomain + 4;
+	public final static int	SerialNum	= RawContactProfileSN;
 
 	@Override
-	public final int getSerialNum() {
+	public int getSerialNum() {
 		return SerialNum;
 	}
 
@@ -106,6 +108,92 @@ public class RawContactProfile
 	public long[]		groupMemberShipID;
 	public long			groupMemberShipMask;
 	public String		vCard;
+
+	public void clone(RawContactProfile rawContactProfile) {
+		rawContactProfile.primaryKey = primaryKey;
+		rawContactProfile.foreignKey = foreignKey;
+		rawContactProfile.externalKey = externalKey;
+		rawContactProfile.vCard = vCard;
+		rawContactProfile.groupMemberShipMask = groupMemberShipMask;
+		if (groupMemberShipID != null)
+		{
+			rawContactProfile.groupMemberShipID = new long[groupMemberShipID.length];
+			System.arraycopy(groupMemberShipID, 0, rawContactProfile.groupMemberShipID, 0, groupMemberShipID.length);
+		}
+		if (groupMemberShip != null)
+		{
+			rawContactProfile.groupMemberShip = new String[groupMemberShip.length];
+			System.arraycopy(groupMemberShip, 0, rawContactProfile.groupMemberShip, 0, groupMemberShip.length);
+		}
+		rawContactProfile.gender = gender;
+		rawContactProfile.note = note;
+		rawContactProfile.nickName = nickName;
+		rawContactProfile.photoEncoded = photoEncoded;
+		rawContactProfile.birthday = birthday;
+		rawContactProfile.displayName = displayName;
+		rawContactProfile.lookUpKey = lookUpKey;
+		if (webUrls != null)
+		{
+			rawContactProfile.webUrls = new String[webUrls.length];
+			System.arraycopy(webUrls, 0, rawContactProfile.webUrls, 0, webUrls.length);
+		}
+		if (name != null)
+		{
+			rawContactProfile.name = new String[name.length];
+			System.arraycopy(name, 0, rawContactProfile.name, 0, name.length);
+		}
+		if (phones != null)
+		{
+			rawContactProfile.phones = new String[phones.length][];
+			int i = 0;
+			for (String[] x : phones)
+			{
+				rawContactProfile.phones[i] = new String[x.length];
+				System.arraycopy(x, 0, rawContactProfile.phones[i], 0, x.length);
+				i++;
+			}
+		}
+		if (addresses != null)
+		{
+			rawContactProfile.addresses = new String[addresses.length][];
+			int i = 0;
+			for (String[] x : addresses)
+			{
+				rawContactProfile.addresses[i] = new String[x.length];
+				System.arraycopy(x, 0, rawContactProfile.addresses[i], 0, x.length);
+				i++;
+			}
+		}
+		if (emails != null)
+		{
+			rawContactProfile.emails = new String[emails.length][];
+			int i = 0;
+			for (String[] x : emails)
+			{
+				rawContactProfile.emails[i] = new String[x.length];
+				System.arraycopy(x, 0, rawContactProfile.emails[i], 0, x.length);
+				i++;
+			}
+		}
+		if (orgs != null)
+		{
+			rawContactProfile.orgs = new String[orgs.length][];
+			int i = 0;
+			for (String[] x : orgs)
+			{
+				rawContactProfile.orgs[i] = new String[x.length];
+				System.arraycopy(x, 0, rawContactProfile.orgs[i], 0, x.length);
+				i++;
+			}
+		}
+	}
+
+	@Override
+	public Profile clone() {
+		RawContactProfile rawContactProfile = new RawContactProfile();
+		clone(rawContactProfile);
+		return rawContactProfile;
+	}
 
 	// 重置所有属性项
 	public void reset() {
@@ -257,7 +345,7 @@ public class RawContactProfile
 		if (encodePhoto)
 		{
 			hasData = addField(buffer, "PHOTO", new String[] {
-				"ENCODING=b"
+							"ENCODING=b"
 			}, photoEncoded) || hasData;
 		}
 		hasData = vCardEncodeEx(buffer, charSet, encodePhoto) || hasData;
@@ -975,7 +1063,7 @@ public class RawContactProfile
 						{
 							tmp[MIMETYPE_INDEX] = String.valueOf(ContactsContract.CommonDataKinds.Organization.TYPE_OTHER);
 						}
-						else if (arg.toUpperCase().startsWith("LABEL＝"))
+						else if (arg.toUpperCase(Locale.US).startsWith("LABEL＝"))
 						{
 							tmp[MIMETYPE_INDEX] = String.valueOf(ContactsContract.CommonDataKinds.Organization.TYPE_CUSTOM);
 							tmp[SUB_CONTENT_INDEX] = IoUtil.splitString(arg, "=", 2)[FIELD_VALUE];
@@ -1035,6 +1123,7 @@ public class RawContactProfile
 	public final static int		CONTENT_INDEX			= 0;
 	public final static int		MIMETYPE_INDEX			= CONTENT_INDEX + 1;
 	public final static int		SUB_CONTENT_INDEX		= MIMETYPE_INDEX + 1;
+	public final static int		TYPE_LABEL				= MIMETYPE_INDEX + 1;
 
 	public final static int		DISPLAY_NAME			= 0;
 	public final static int		PREFIX_NAME				= DISPLAY_NAME + 1;

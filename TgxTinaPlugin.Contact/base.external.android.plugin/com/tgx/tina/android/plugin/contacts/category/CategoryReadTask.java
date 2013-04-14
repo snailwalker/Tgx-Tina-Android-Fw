@@ -29,7 +29,7 @@ public class CategoryReadTask
 		super(context);
 	}
 
-	public final static int	SerialNum	= SerialDomain + 40;
+	public final static int	SerialNum	= CategoryReadTaskSN;
 
 	@Override
 	public void run() throws Exception {

@@ -40,7 +40,7 @@ public class RawContactReadAllTask
 				extends
 				ContactTask
 {
-	public final static int			SerialNum	= SerialDomain + 32;
+	public final static int			SerialNum	= RawContactReadAllTaskSN;
 	boolean							profileMapInit;
 	int								lastCursorIndex;
 	int								available;

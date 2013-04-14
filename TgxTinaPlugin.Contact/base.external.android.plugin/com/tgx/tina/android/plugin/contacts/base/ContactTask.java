@@ -22,8 +22,17 @@ public abstract class ContactTask
 				extends
 				Task
 {
-	protected final static int	SerialDomain	= -0x4000;
-	final static int			SerialNum		= SerialDomain;
+	protected final static int	SerialDomain				= -0x4000;
+	final static int			SerialNum					= SerialDomain;
+	protected final static int	CallLogReadTaskSN			= SerialNum + 1;
+	protected final static int	CategoryReadTaskSN			= CallLogReadTaskSN + 1;
+	protected final static int	PhonesReadTaskSN			= CategoryReadTaskSN + 1;
+	protected final static int	ContactReadTaskSN			= PhonesReadTaskSN + 1;
+	protected final static int	RawContactReadTaskSN		= ContactReadTaskSN + 1;
+	protected final static int	RawContactReadAllTaskSN		= RawContactReadTaskSN + 1;
+	protected final static int	RawContactWriteTaskSN		= RawContactReadAllTaskSN + 1;
+	protected final static int	RawContactBatchWriteTaskSN	= RawContactWriteTaskSN + 1;
+
 	protected Context			context;
 
 	public ContactTask(Context context)

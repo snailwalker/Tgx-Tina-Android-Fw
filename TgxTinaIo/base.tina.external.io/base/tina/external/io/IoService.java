@@ -1,19 +1,19 @@
- /*******************************************************************************
-  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
-  *
-  * Licensed under the Apache License, Version 2.0 (the "License");
-  * you may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at
-  *
-  * http://www.apache.org/licenses/LICENSE-2.0
-  *
-  * Unless required by applicable law or agreed to in writing, software
-  * distributed under the License is distributed on an "AS IS" BASIS,
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  *******************************************************************************/
- package base.tina.external.io;
+/*******************************************************************************
+ * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *******************************************************************************/
+package base.tina.external.io;
 
 import base.tina.core.task.TaskService;
 import base.tina.core.task.infc.ITaskFactory;
@@ -27,8 +27,8 @@ public class IoService
 		defaultFactory = factory;
 		//#debug warn
 		if (defaultFactory == null) base.tina.core.log.LogPrinter.w("IoServic", "No Default IoTaskFactory~");
-		taskService = service;
 		if (service == null) throw new NullPointerException();
+		taskService = service;
 	}
 
 	private final TaskService	taskService;
@@ -39,7 +39,7 @@ public class IoService
 	}
 
 	public IoTask<?> requestService(ITaskFactory<String, IoSession<?>, IoFilter, IoTask<?>> taskFactory, String url, int mode, IoFilter filter, Object toWrite, boolean isShedule, int timelimit, long delayTime,
-			byte retryLimit, Object attachment, ITaskProgress progress, int timeOutSecound, ITaskTimeout<?> taskTimeOut, int bindSerial) {
+					byte retryLimit, Object attachment, ITaskProgress progress, int timeOutSecound, ITaskTimeout<?> taskTimeOut, int bindSerial) {
 		if (taskFactory == null) taskFactory = defaultFactory;
 		if (taskFactory == null) return null;
 		IoTask<?> ioTask = taskFactory.createTask(url, mode, filter);
@@ -58,7 +58,7 @@ public class IoService
 	}
 
 	public IoTask<?> requestService(ITaskFactory<String, IoSession<?>, IoFilter, IoTask<?>> taskFactory, IoSession<?> ioSession, IoFilter filter, Object toWrite, boolean isShedule, int timeLimit, long delayTime,
-			byte retryLimit, Object attachment, ITaskProgress progress, int timeOutSecound, ITaskTimeout<?> taskTimeOut, int bindSerial) {
+					byte retryLimit, Object attachment, ITaskProgress progress, int timeOutSecound, ITaskTimeout<?> taskTimeOut, int bindSerial) {
 		if (taskFactory == null) taskFactory = defaultFactory;
 		if (taskFactory == null) return null;
 		IoTask<?> ioTask = taskFactory.createTask(ioSession, filter);
@@ -110,10 +110,6 @@ public class IoService
 		return requestService(taskFactory, ioSession, filter, ioBuffer, false, -1, -1, (byte) 0, null, null, 0, null, 0);
 	}
 
-	public IoTask<?> requestService(IoSession<?> ioSession, IoFilter filter, Object ioBuffer, int bindSerial) {
-		return requestService(null, ioSession, filter, ioBuffer, false, -1, -1, (byte) 0, null, null, 0, null, bindSerial);
-	}
-
 	public IoTask<?> requestService(ITaskFactory<String, IoSession<?>, IoFilter, IoTask<?>> taskFactory, IoSession<?> ioSession, IoFilter filter, Object ioBuffer, int bindSerial) {
 		return requestService(taskFactory, ioSession, filter, ioBuffer, false, -1, -1, (byte) 0, null, null, 0, null, bindSerial);
 	}
@@ -135,7 +131,7 @@ public class IoService
 	}
 
 	public IoTask<?> requestService(ITaskFactory<String, IoSession<?>, IoFilter, IoTask<?>> taskFactory, String url, int mode, IoFilter filter, Object ioBuffer, boolean schedule, int timeOutSecound,
-			ITaskTimeout<?> taskTimeOut) {
+					ITaskTimeout<?> taskTimeOut) {
 		return requestService(taskFactory, url, mode, filter, ioBuffer, schedule, -1, -1, (byte) 0, null, null, timeOutSecound, taskTimeOut, 0);
 	}
 
@@ -144,7 +140,7 @@ public class IoService
 	}
 
 	public IoTask<?> requestService(ITaskFactory<String, IoSession<?>, IoFilter, IoTask<?>> taskFactory, String url, int mode, IoFilter filter, Object ioBuffer, boolean schedule, int timeOutSecound,
-			ITaskTimeout<?> taskTimeOut, int bindSerial) {
+					ITaskTimeout<?> taskTimeOut, int bindSerial) {
 		return requestService(taskFactory, url, mode, filter, ioBuffer, schedule, -1, -1, (byte) 0, null, null, timeOutSecound, taskTimeOut, bindSerial);
 	}
 
@@ -153,16 +149,24 @@ public class IoService
 	}
 
 	public IoTask<?> requestService(ITaskFactory<String, IoSession<?>, IoFilter, IoTask<?>> taskFactory, IoSession<?> ioSession, IoFilter filter, Object ioBuffer, boolean schedule, int timeOutSecound,
-			ITaskTimeout<?> taskTimeOut) {
+					ITaskTimeout<?> taskTimeOut) {
 		return requestService(taskFactory, ioSession, filter, ioBuffer, schedule, -1, -1, (byte) 0, null, null, timeOutSecound, taskTimeOut, 0);
 	}
 
-	public IoTask<?> requestService(IoSession<?> ioSession, IoFilter filter, Object ioBuffer, boolean schedule, int timeOutSecound, ITaskTimeout<?> taskTimeOut, int bindSerial) {
-		return requestService(null, ioSession, filter, ioBuffer, schedule, -1, -1, (byte) 0, null, null, timeOutSecound, taskTimeOut, bindSerial);
+	public IoTask<?> requestService(IoSession<?> ioSession, IoFilter filter, Object ioBuffer, long delay, int timeOutSecound, ITaskTimeout<?> taskTimeOut, byte retryLimit) {
+		return requestService(null, ioSession, filter, ioBuffer, false, -1, delay, retryLimit, null, null, timeOutSecound, taskTimeOut, 0);
+	}
+
+	public IoTask<?> requestService(IoSession<?> ioSession, IoFilter filter, Object ioBuffer, long delay, int timeOutSecound, ITaskTimeout<?> taskTimeOut) {
+		return requestService(null, ioSession, filter, ioBuffer, false, -1, delay, (byte) 0, null, null, timeOutSecound, taskTimeOut, 0);
+	}
+
+	public IoTask<?> requestService(IoSession<?> ioSession, IoFilter filter, Object ioBuffer, long delay) {
+		return requestService(null, ioSession, filter, ioBuffer, false, -1, delay, (byte) 0, null, null, 0, null, 0);
 	}
 
 	public IoTask<?> requestService(ITaskFactory<String, IoSession<?>, IoFilter, IoTask<?>> taskFactory, IoSession<?> ioSession, IoFilter filter, Object ioBuffer, boolean schedule, int timeOutSecound,
-			ITaskTimeout<?> taskTimeOut, int bindSerial) {
+					ITaskTimeout<?> taskTimeOut, int bindSerial) {
 		return requestService(taskFactory, ioSession, filter, ioBuffer, schedule, -1, -1, (byte) 0, null, null, timeOutSecound, taskTimeOut, bindSerial);
 	}
 }

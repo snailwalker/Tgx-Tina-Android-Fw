@@ -40,7 +40,7 @@ public class DownloadManager
 	private String									where;
 	Comparator<DownloadItem>						comparator;
 
-	public DownloadManager(Context context)
+	public DownloadManager(Context context,String authority)
 	{
 		mContext = context;
 		comparator = new Comparator<DownloadItem>()
@@ -56,13 +56,13 @@ public class DownloadManager
 
 			@Override
 			public void onReceive(Context context, Intent intent) {
-				if (intent.getAction().equals(Constants.ACTION_LIST2))
+				if (intent.getAction().equals(Constants.ACTION_LIST_REFRESH))
 				{
 					//#debug verbose
-					base.tina.core.log.LogPrinter.v(Tag, "Receiver ACTION_LIST2");
+					base.tina.core.log.LogPrinter.v(Tag, "Receiver ACTION_LIST_REFRESH");
 					if (mViews.size() < 1)
 					{
-						if (mDownloadItems.size() != 0) mDownloadItems.clear();
+						if (!mDownloadItems.isEmpty()) mDownloadItems.clear();
 						return;
 					}
 					Cursor c = context.getContentResolver().query(GlobalDownload.CONTENT_URI, new String[] {
@@ -98,7 +98,7 @@ public class DownloadManager
 						String title = c.getString(titleColumn);
 						if (title == null || title.length() == 0)
 						{
-							title = "<未命名>";
+							title = "<unknown>";
 						}
 						String key = String.valueOf(id);
 						if (mDownloadItems.containsKey(key))
@@ -125,8 +125,9 @@ public class DownloadManager
 
 		};
 		IntentFilter intf = new IntentFilter();
-		intf.addAction(Constants.ACTION_LIST2);
+		intf.addAction(Constants.ACTION_LIST_REFRESH);
 		context.registerReceiver(br, intf);
+		GlobalDownload.setAutority(authority);
 	}
 
 	public void setWhereParam(ArrayList<String> params) {
@@ -162,6 +163,12 @@ public class DownloadManager
 			return buffer.toString();
 		}
 		return null;
+	}
+
+	public void deleteItemHistory(String title) {
+		mContext.getContentResolver().delete(GlobalDownload.CONTENT_URI, GlobalDownload.COLUMN_TITLE + "=?", new String[] {
+						title
+		});
 	}
 
 	public ArrayList<DownloadItem> getDownloadList(ArrayList<String> params) {

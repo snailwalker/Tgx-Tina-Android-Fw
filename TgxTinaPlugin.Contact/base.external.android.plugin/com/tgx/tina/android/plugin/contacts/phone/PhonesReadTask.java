@@ -40,9 +40,9 @@ public class PhonesReadTask
 		profilePack = new PhonePack();
 	}
 
-	public PhonePack		profilePack;						// 为分段读取准备，使用任务内全局变量，而未使用局部变量
+	public PhonePack		profilePack;					// 为分段读取准备，使用任务内全局变量，而未使用局部变量
 
-	public final static int	SerialNum	= SerialDomain + 20;
+	public final static int	SerialNum	= PhonesReadTaskSN;
 
 	@Override
 	public final int getSerialNum() {

@@ -37,6 +37,22 @@ public final class PhoneProfile
 	public long		weightvalue;
 	public int		type;
 
+	@Override
+	public Profile clone() {
+		PhoneProfile phoneProfile = new PhoneProfile(primaryKey, getContactID(), getRawContactID());
+		phoneProfile.displayName = displayName;
+		phoneProfile.phone = phone;
+		phoneProfile.label = label;
+		phoneProfile.phoneMinMatch = phoneMinMatch;
+		phoneProfile.isFavorite = isFavorite;
+		phoneProfile.photoID = photoID;
+		phoneProfile.lastContactTime = lastContactTime;
+		phoneProfile.local_raw_version = local_raw_version;
+		phoneProfile.weightvalue = weightvalue;
+		phoneProfile.type = type;
+		return phoneProfile;
+	}
+
 	public PhoneProfile(int _ID, int contactID, int rawContactID)
 	{
 		primaryKey = _ID;
@@ -53,7 +69,7 @@ public final class PhoneProfile
 		super.dispose();
 	}
 
-	public final static int	SerialNum	= SerialDomain + 3;
+	public final static int	SerialNum	= PhoneProfileSN;
 
 	@Override
 	public final int getSerialNum() {

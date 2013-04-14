@@ -15,29 +15,34 @@
  *******************************************************************************/
 package com.tgx.tina.android.plugin.contacts.calllog;
 
-import com.tgx.tina.android.plugin.contacts.base.ContactTask;
-
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.CallLog.Calls;
 import base.tina.core.task.infc.ITaskProgress.TaskProgressType;
+
+import com.tgx.tina.android.plugin.contacts.base.ContactTask;
 
 public class CallLogReadTask
 				extends
 				ContactTask
 {
 
-	public CallLogReadTask(Context context)
+	public CallLogReadTask(Context context, int limit, int lastID)
 	{
 		super(context);
+		this.limit = limit;
+		this.lastID = lastID;
 	}
+
+	private final int	limit;
+	private final int	lastID;
 
 	@Override
 	public int getSerialNum() {
 		return SerialNum;
 	}
 
-	public final static int	SerialNum			= SerialDomain + 10;
+	public final static int	SerialNum			= CallLogReadTaskSN;
 
 	final String[]			PROJECTION_STRINGS	= {
 					Calls.NUMBER ,//0
@@ -49,7 +54,7 @@ public class CallLogReadTask
 					Calls.CACHED_NAME
 													//6
 												};
-	final static int		MAX_READ			= 500;
+	public final static int	MAX_READ			= 500;
 
 	@Override
 	public void run() throws Exception {
@@ -57,21 +62,31 @@ public class CallLogReadTask
 		Cursor callsCursor = context.getContentResolver().query(Calls.CONTENT_URI, PROJECTION_STRINGS, null, null, Calls.DEFAULT_SORT_ORDER);
 		if (callsCursor != null) try
 		{
-			CallPack profilePack = new CallPack();
-			int count = 0;
-			while (callsCursor.moveToNext() && count < MAX_READ)
+
+			if (callsCursor.moveToFirst())
 			{
-				String phoneNum = callsCursor.getString(0);
-				String cachedName = callsCursor.getString(6);
-				if (profile == null || !profile.phoneNum.equals(phoneNum))
+				int lastID = callsCursor.getInt(5);
+				int limit = this.limit;
+				if (this.lastID >= 0 && this.lastID - lastID < 0) limit = Math.max(limit, lastID - this.lastID);
+				CallPack profilePack = new CallPack(lastID);
+				int count = 0;
+				do
 				{
-					profile = new CallLogProfile(phoneNum, cachedName);
-					profilePack.addProfile(profile);
+					String phoneNum = callsCursor.getString(0);
+					String cachedName = callsCursor.getString(6);
+					int type = callsCursor.getInt(3);
+					if (excludes(phoneNum, type)) continue;
+					if (profile == null || !profile.phoneNum.equals(phoneNum))
+					{
+						profile = new CallLogProfile(phoneNum, cachedName);
+						profilePack.addProfile(profile);
+					}
+					profile.addEntry(callsCursor.getLong(2), callsCursor.getLong(1), type);
+					count++;
 				}
-				profile.addEntry(callsCursor.getLong(2), callsCursor.getLong(1), callsCursor.getInt(3));
-				count++;
+				while (callsCursor.moveToNext() && count < limit);
+				commitResult(profilePack, CommitAction.WAKE_UP);
 			}
-			commitResult(profilePack, CommitAction.WAKE_UP);
 		}
 		catch (Exception e)
 		{
@@ -84,4 +99,9 @@ public class CallLogReadTask
 			callsCursor.close();
 		}
 	}
+
+	public boolean excludes(String phone, int type) {
+		return false;
+	}
+
 }

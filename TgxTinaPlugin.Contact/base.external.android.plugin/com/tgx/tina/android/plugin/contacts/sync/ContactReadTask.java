@@ -25,7 +25,7 @@ public class ContactReadTask
 				extends
 				ContactTask
 {
-	public final static int	SerialNum	= SerialDomain + 34;
+	public final static int	SerialNum	= ContactReadTaskSN;
 
 	public ContactReadTask(Context context, int contactId)
 	{
@@ -33,7 +33,7 @@ public class ContactReadTask
 		this.contactId = contactId;
 	}
 
-	private final int		contactId;
+	protected final int		contactId;
 	final static String[]	projection	= {
 											RawContacts._ID
 
@@ -42,11 +42,11 @@ public class ContactReadTask
 
 	@Override
 	public void run() throws Exception {
-		int[] rawContactIds = getRawContactIds();
+		int[] rawContactIds = getRawContactIds(contactId);
 		scheduleService.requestService(new RawContactReadTask(context, rawContactIds), false, getListenSerial());
 	}
 
-	protected int[] getRawContactIds() {
+	protected int[] getRawContactIds(int contactId) {
 		Cursor cursor = context.getContentResolver().query(RawContacts.CONTENT_URI, projection, selection, new String[] {
 						String.valueOf(contactId)
 		}, null);

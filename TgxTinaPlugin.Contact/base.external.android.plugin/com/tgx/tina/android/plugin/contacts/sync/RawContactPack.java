@@ -21,10 +21,15 @@ public class RawContactPack
 				extends
 				ProfilePack<RawContactProfile>
 {
-	public final static int	SerialNum	= ProfilePack.SerialNum + 4;
+	public final static int	SerialNum	= RawContactPackSN;
 
 	@Override
 	public final int getSerialNum() {
 		return SerialNum;
+	}
+
+	@Override
+	protected ProfilePack<RawContactProfile> subInstance() {
+		return new RawContactPack();
 	}
 }
