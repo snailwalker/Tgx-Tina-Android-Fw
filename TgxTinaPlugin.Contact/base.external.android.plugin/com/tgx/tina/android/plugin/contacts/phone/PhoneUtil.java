@@ -107,9 +107,18 @@ public class PhoneUtil
 		String reverseKey = reversePhone(needFormate ? formatPhone(phone1) : phone1);
 		String toMatch = getMinMatchKey(reversePhone);
 		String matchKey = getMinMatchKey(reverseKey);
-		return 0xFF == matchString(matchKey, toMatch);
+		return 0x3FF == matchString(matchKey, toMatch);
 	}
 
+	/**
+	 * 当phone1 = "33333" phone2 = "33333333";
+	 * 时，phone1与phone2进行String.compareto操作时 排列将为 phone1:phone2 此时进行isMinSame比较需要
+	 * lookupKey1 = phone2,lookupKey2= phone1
+	 * 
+	 * @param lookupKey1
+	 * @param lookupKey2
+	 * @return
+	 */
 	public static boolean isMinSame(String lookupKey1, String lookupKey2) {
 		int len = Math.min(lookupKey1.length(), lookupKey2.length());
 		return (0x3FF >> (10 - len)) == matchString(lookupKey1, lookupKey2);

@@ -17,9 +17,10 @@ package com.tgx.tina.android.ipc.framework;
 
 import java.util.LinkedList;
 
+import com.tgx.tina.android.task.ATaskService;
+
 import android.app.Activity;
 import android.os.Bundle;
-import base.tina.core.task.android.ATaskService;
 
 public abstract class BaseActivity
 				extends
@@ -31,8 +32,9 @@ public abstract class BaseActivity
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		//#ifdef debug
-		//#ifndef app_log 
-		base.tina.external.android.log.AndroidPrinter.createByActivity(this);
+		//#if MULTI_ACTIVITY
+		//#else
+		com.tgx.tina.android.log.AndroidPrinter.createByActivity(this);
 		//#endif 
 		//#endif 
 	}
@@ -40,10 +42,10 @@ public abstract class BaseActivity
 	@Override
 	protected void onDestroy() {
 		history.clear();
-		if (ioAService != null) ioAService.stopAService();
 		super.onDestroy();
-		//#ifdef buf_activity
+		//#if MULTI_ACTIVITY
 		//#else
+		if (ioAService != null) ioAService.stopAService();
 		System.exit(0);
 		//#endif
 	}

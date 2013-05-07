@@ -80,30 +80,17 @@ public class RawContactProfile
 	public String		lookUpKey;				// UID
 	public String		displayName;			// contact display-name
 	public String[]		name;					// name field 7 field
-	public String[][]	phones;				// [count][4] | [i][0]:phoneNum
-												// | [i][1]:phone mime type |
-												// [i][2]: custom type label |
-												// [i][3]:phone callerloc
-	public String[][]	addresses;				// [count][10]| [i][0]:address |
-												// [i][1]:address mime type |
-												// [i][2]: custom type label |
-												// [i][3-9]:detail
-	public String[][]	emails;				// [count][3] | [i][0]:email |
-												// [i][1]:email mime type |
-												// [i][2]: custom type label
-	public String[][]	orgs;					// [count][5] |
-												// [i][0]:organization |
-												// [i][1]:organization mime type
-												// | [i][2]: custom type label |
-												// [i][3]:title | [i][4]:role
+	public String[][]	phones;				    // [count][4] | [i][0]:phoneNum | [i][1]:phone mime type   | [i][2]: custom type label | [i][3]:phone callerloc
+	public String[][]	addresses;				// [count][10]| [i][0]:address  | [i][1]:address mime type | [i][2]: custom type label | [i][3-9]:detail
+	public String[][]	emails;				    // [count][3] | [i][0]:email    | [i][1]:email mime type   | [i][2]: custom type label
+	public String[][]	orgs;					// [count][5] | [i][0]:organization | [i][1]:organization mime type | [i][2]: custom type label | [i][3]:title | [i][4]:role
 	public String[]		webUrls;
 	public String		birthday;
 	public String		photoEncoded;
 	public String		nickName;
 	public String		note;
-	public String		gender;				// TODO 标准 应该为2段字符 [0]:
-												// {"M"|male,"F"|fmale,"O"|other,"U"|unknow,""|}
-												// //[1]: {";" text}
+	public String		gender;				    // TODO 标准 应该为2段字符 [0]:
+												// {"M"|male,"F"|fmale,"O"|other,"U"|unknow,""|} [1]: {";" text}
 	public String[]		groupMemberShip;
 	public long[]		groupMemberShipID;
 	public long			groupMemberShipMask;

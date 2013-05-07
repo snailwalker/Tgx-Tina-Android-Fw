@@ -1,19 +1,19 @@
- /*******************************************************************************
-  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
-  *
-  * Licensed under the Apache License, Version 2.0 (the "License");
-  * you may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at
-  *
-  * http://www.apache.org/licenses/LICENSE-2.0
-  *
-  * Unless required by applicable law or agreed to in writing, software
-  * distributed under the License is distributed on an "AS IS" BASIS,
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  *******************************************************************************/
- package base.tina.core.task;
+/*******************************************************************************
+ * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ *******************************************************************************/
+package base.tina.core.task;
 
 import java.util.Comparator;
 import java.util.NoSuchElementException;
@@ -24,21 +24,21 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+
 public class ScheduleQueue<E extends Task>
 {
-	transient final ReentrantLock	lock				= new ReentrantLock();
-	transient final Condition		available			= lock.newCondition();
-	final TreeSet<E>				tasksTree;
-	int								offerIndex;
-	TaskService						service;
-	final AtomicInteger				priorityIncrease	= new AtomicInteger(0);
-
-	public ScheduleQueue(Comparator<? super E> comparator, TaskService service)
-	{
+	transient final ReentrantLock lock             = new ReentrantLock();
+	transient final Condition     available        = lock.newCondition();
+	final TreeSet<E>              tasksTree;
+	int                           offerIndex;
+	TaskService                   service;
+	final AtomicInteger           priorityIncrease = new AtomicInteger(0);
+	
+	public ScheduleQueue(Comparator<? super E> comparator, TaskService service) {
 		tasksTree = new TreeSet<E>(comparator);
 		this.service = service;
 	}
-
+	
 	/**
 	 * @author Zhangzhuo
 	 * @param E
@@ -53,6 +53,7 @@ public class ScheduleQueue<E extends Task>
 		try
 		{
 			E first = peek();
+			e.invalid = false;
 			e.inQueueIndex = ++offerIndex;
 			if (!tasksTree.add(e))
 			{
@@ -68,7 +69,7 @@ public class ScheduleQueue<E extends Task>
 			lock.unlock();
 		}
 	}
-
+	
 	private E peek() {
 		try
 		{
@@ -79,7 +80,7 @@ public class ScheduleQueue<E extends Task>
 			return null;
 		}
 	}
-
+	
 	private E pollFirst() {
 		E first = peek();
 		if (first == null) return null;
@@ -90,7 +91,7 @@ public class ScheduleQueue<E extends Task>
 		}
 		return null;
 	}
-
+	
 	/**
 	 * 移除并返回队列的头部元素,队列为空或Task.isToSchedule < 0 时 忽略此操作
 	 * 
@@ -116,7 +117,7 @@ public class ScheduleQueue<E extends Task>
 			lock.unlock();
 		}
 	}
-
+	
 	public final boolean replace(E e) {
 		final ReentrantLock lock = this.lock;
 		lock.lock();
@@ -135,52 +136,7 @@ public class ScheduleQueue<E extends Task>
 			lock.unlock();
 		}
 	}
-
-	/**
-	 * @param e
-	 * @param duration
-	 * @param timeUnit
-	 * @return {@code 1}:已经由队列进行更新<br>
-	 *         {@code -1}:此任务不在队列中<br>
-	 *         {@code -2}:任务入队失败<br>
-	 */
-	public final int setDelay(E e, long duration, TimeUnit timeUnit) {
-		final ReentrantLock lock = this.lock;
-		lock.lock();
-		try
-		{
-			int result = 0;
-			if (!tasksTree.contains(e)) result = -1;
-			else if (tasksTree.remove(e)) e.outScheduleQueue();
-			else result = -2;
-			e.doTime = System.currentTimeMillis() + TimeUnit.MILLISECONDS.convert(duration, timeUnit);
-			if (result == 0) result = offer(e) ? 1 : -2;
-			return result;
-		}
-		finally
-		{
-			lock.unlock();
-		}
-	}
-
-	public final boolean updateDelay(E e, long duration, TimeUnit timeUnit) {
-		final ReentrantLock lock = this.lock;
-		if (lock.tryLock())
-		{
-			try
-			{
-				e.offTime = System.currentTimeMillis() + TimeUnit.MILLISECONDS.convert(duration, timeUnit) - e.doTime;
-				available.signalAll();
-				return true;
-			}
-			finally
-			{
-				lock.unlock();
-			}
-		}
-		return false;
-	}
-
+ 
 	final boolean isEmpty() {
 		final ReentrantLock lock = this.lock;
 		lock.lock();
@@ -193,17 +149,17 @@ public class ScheduleQueue<E extends Task>
 			lock.unlock();
 		}
 	}
-
+	
 	final int size() {
 		return tasksTree.size();
 	}
-
+	
 	public final void clear() {
 		tasksTree.clear();
 	}
-
-	public final AtomicLong	toWakeUpAbsoluteTime	= new AtomicLong(-1);
-
+	
+	public final AtomicLong toWakeUpAbsoluteTime = new AtomicLong(-1);
+	
 	public final E take() throws InterruptedException {
 		final ReentrantLock lock = this.lock;
 		lock.lockInterruptibly();
@@ -245,6 +201,8 @@ public class ScheduleQueue<E extends Task>
 						priorityIncrease.set(1);
 						toWakeUpAbsoluteTime.set(first.doTime);
 						service.setScheduleAlarmTime(first.doTime);
+						//#debug
+						base.tina.core.log.LogPrinter.d(null, "Queue await time:" + TimeUnit.NANOSECONDS.toMillis(delay));
 						available.awaitNanos(delay);
 					}
 				}

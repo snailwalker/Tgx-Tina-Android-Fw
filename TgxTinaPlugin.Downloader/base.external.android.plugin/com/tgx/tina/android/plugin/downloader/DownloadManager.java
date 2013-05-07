@@ -40,7 +40,7 @@ public class DownloadManager
 	private String									where;
 	Comparator<DownloadItem>						comparator;
 
-	public DownloadManager(Context context,String authority)
+	public DownloadManager(Context context, String authority)
 	{
 		mContext = context;
 		comparator = new Comparator<DownloadItem>()
@@ -127,7 +127,7 @@ public class DownloadManager
 		IntentFilter intf = new IntentFilter();
 		intf.addAction(Constants.ACTION_LIST_REFRESH);
 		context.registerReceiver(br, intf);
-		GlobalDownload.setAutority(authority);
+		
 	}
 
 	public void setWhereParam(ArrayList<String> params) {
@@ -207,7 +207,7 @@ public class DownloadManager
 			String title = c.getString(titleColumn);
 			if (title == null || title.length() == 0)
 			{
-				title = "<未命名>";
+				title = "unknown";
 			}
 			DownloadItem item = new DownloadItem();
 			item.mId = id;

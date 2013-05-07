@@ -41,6 +41,10 @@ public abstract class ContactTask
 		this.context = context;
 	}
 
+	public final void setContext(Context context) {
+		this.context = context;
+	}
+
 	@Override
 	public void initTask() {
 		isBloker = true;
@@ -55,6 +59,12 @@ public abstract class ContactTask
 	@Override
 	protected void finishThreadTask() {
 
+	}
+
+	@Override
+	public void dispose() {
+		context = null;
+		super.dispose();
 	}
 
 	public final static String	TMP_FILE_FOR_READ	= "contacts.buf";

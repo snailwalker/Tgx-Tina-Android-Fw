@@ -1,0 +1,68 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.tgx.io.connect.android.test"
+    android:versionCode="1"
+    android:versionName="1.0" >
+
+    <uses-sdk
+        android:minSdkVersion="8"
+        android:targetSdkVersion="17" />
+
+    <uses-permission android:name="tgx.android.permissions.BROADCAST" />
+    <uses-permission android:name="tgx.android.permissions.SERVICE" />
+    <uses-permission android:name="tgx.android.permissions.API" />
+    <uses-permission android:name="tgx.android.permissions.PROVIDER" />
+    <uses-permission android:name="tgx.android.permissions.VOTE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.READ_LOGS" />
+
+    <permission
+        android:name="tgx.android.permissions.BROADCAST"
+        android:protectionLevel="normal" />
+    <permission
+        android:name="tgx.android.permissions.SERVICE"
+        android:protectionLevel="normal" />
+    <permission
+        android:name="tgx.android.permissions.PROVIDER"
+        android:protectionLevel="signature" />
+    <permission
+        android:name="tgx.android.permissions.VOTE"
+        android:protectionLevel="normal" />
+    <permission
+        android:name="tgx.android.permissions.API"
+        android:protectionLevel="normal" />
+
+    <application
+        android:allowBackup="true"
+        android:debuggable="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+        <service
+            android:name="com.tgx.test.TestConnectService"
+            android:label="@string/test_service_name"
+            android:permission="tgx.android.permissions.SERVICE" >
+            <intent-filter>
+                <action android:name="tgx.intent.connect.service.action.START" />
+            </intent-filter>
+        </service>
+
+        <activity android:name="com.tgx.test.TestMainActivity" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <receiver android:name="com.tgx.io.connect.android.ConnectReceiver" >
+            <intent-filter android:priority="14000" >
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

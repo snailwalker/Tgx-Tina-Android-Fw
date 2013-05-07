@@ -1,17 +1,17 @@
 /*******************************************************************************
  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  *******************************************************************************/
 package com.tgx.tina.android.plugin.massage.sms.intercept;
 
@@ -25,54 +25,53 @@ import android.telephony.SmsMessage;
 import android.telephony.TelephonyManager;
 import android.util.SparseArray;
 
-import com.tgx.tina.android.ipc.framework.BaseService;
 import com.tgx.tina.android.plugin.massage.sms.SmsContentObserver;
 import com.tgx.tina.android.plugin.massage.sms.SmsMsgPack;
+
 
 public class SmsInterceptUtil
 {
 	public final static void onReceive(Context context, Intent intent, IMsgGather msgGather) {
 		onReceiveSMS(context, intent, msgGather);
 	}
-
-	public final static <T extends BaseService> void getSmsRecvObserver(T t, SmsContentObserver observer) {
-		t.getContentResolver().registerContentObserver(Uri.parse("content://sms/inbox"), false, SmsInterceptUtil.observer = observer);
+	
+	public final static void getSmsRecvObserver(Context context, SmsContentObserver observer) {
+		context.getContentResolver().registerContentObserver(Uri.parse("content://sms/inbox"), false, SmsInterceptUtil.observer = observer);
 	}
-
+	
 	public final static void rmSmsRecvObserver(Context context) {
 		if (observer != null) context.getContentResolver().unregisterContentObserver(observer);
 	}
-
-	private static SmsContentObserver	observer;
-
+	
+	private static SmsContentObserver observer;
+	
 	public static void setObserverEnable(boolean enabled) {
 		if (observer != null) observer.setEnable(enabled);
 	}
-
+	
 	static class SMS_MULTI_PARTS
-
+	
 	{
-		String	phone, content;
-		long	timeStamp;
-
+		String phone, content;
+		long   timeStamp;
+		
 		public void dispose() {
 			phone = null;
 			content = null;
 		}
-
+		
 	}
-
+	
 	static class SMS_MULTI_MSG
 	{
-		public SMS_MULTI_MSG(int sign)
-		{
+		public SMS_MULTI_MSG(int sign) {
 			this.sign = sign;
 		}
-
-		SMS_MULTI_PARTS[]	parts;
-		int					sign;
-		long				putStamp;
-
+		
+		SMS_MULTI_PARTS[] parts;
+		int               sign;
+		long              putStamp;
+		
 		public void dispose() {
 			if (parts != null) for (SMS_MULTI_PARTS part : parts)
 			{
@@ -81,7 +80,7 @@ public class SmsInterceptUtil
 			parts = null;
 		}
 	}
-
+	
 	static void onReceiveSMS(Context context, Intent intent, IMsgGather msgGather) {
 		Object[] objects = (Object[]) (intent.getExtras().get("pdus"));
 		byte[] pdu, userData;
@@ -104,12 +103,12 @@ public class SmsInterceptUtil
 				messagePack.state = SmsMsgPack.LOCAL_RECEIVE;
 				messagePack.address = address;
 				messagePack.content = content;
-
+				
 				//#debug
 				base.tina.core.log.LogPrinter.d(null, "<%%%%%%%> smsMessage.getIndexOnIcc : " + smsMessage.getIndexOnIcc());
-
+				
 				if (timeStamp > 0) messagePack.timeStamp = new Date(timeStamp);
-
+				
 				// ~插入服务的队列
 				msgGather.gatherMsg(messagePack);
 				continue PDUS;
@@ -123,12 +122,12 @@ public class SmsInterceptUtil
 				messagePack.state = SmsMsgPack.LOCAL_RECEIVE;
 				messagePack.address = address;
 				messagePack.content = content;
-
+				
 				//#debug 
 				base.tina.core.log.LogPrinter.d(null, "<%%%%%%%> smsMessage.getIndexOnIcc : " + smsMessage.getIndexOnIcc());
-
+				
 				if (timeStamp > 0) messagePack.timeStamp = new Date(timeStamp);
-
+				
 				// ~插入服务的队列
 				msgGather.gatherMsg(messagePack);
 			}
@@ -137,7 +136,7 @@ public class SmsInterceptUtil
 				//#debug
 				base.tina.core.log.LogPrinter.d(null, "长短信需要拼接~~~~~~");
 				SMS_MULTI_MSG multiMsg;
-
+				
 				tp_udl = pdu[pdu.length - 1 - userData.length - 6] & 0xFF;
 				if (tp_udl == userData.length + 6 && pdu[pdu.length - 1 - userData.length - 5] == 0x05) tp_sign = pdu[pdu.length - 1 - userData.length - 2];
 				else
@@ -167,7 +166,7 @@ public class SmsInterceptUtil
 				multiMsg.parts[index].phone = smsMessage.getDisplayOriginatingAddress();
 				multiMsg.parts[index].content = smsMessage.getDisplayMessageBody();
 				multiMsg.parts[index].timeStamp = smsMessage.getTimestampMillis();
-
+				
 				boolean receiveAll = true;
 				for (SMS_MULTI_PARTS sms_part : multiMsg.parts)
 					if (sms_part == null)
@@ -204,7 +203,7 @@ public class SmsInterceptUtil
 				SMS_MULTI_MSG multiMsg = toPackMsgs.valueAt(i);
 				if (TimeUnit.MILLISECONDS.toSeconds(multiMsg.putStamp - curTime) > 300)
 				{
-
+					
 					for (SMS_MULTI_PARTS part : multiMsg.parts)
 					{
 						if (part != null)

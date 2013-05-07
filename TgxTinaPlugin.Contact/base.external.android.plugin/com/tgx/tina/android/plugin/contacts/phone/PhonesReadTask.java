@@ -37,7 +37,6 @@ public class PhonesReadTask
 	public PhonesReadTask(Context context)
 	{
 		super(context);
-		profilePack = new PhonePack();
 	}
 
 	public PhonePack		profilePack;					// 为分段读取准备，使用任务内全局变量，而未使用局部变量
@@ -56,8 +55,15 @@ public class PhonesReadTask
 	}
 
 	@Override
+	public void initTask() {
+		profilePack = new PhonePack();
+		super.initTask();
+	}
+
+	@Override
 	public void run() throws Exception {
-		Cursor cursor = context.getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, PHONES_PROJECTION, PHONES_SELECTION, PHONES_SELECTION_ARGS, ContactsContract.CommonDataKinds.Phone._ID);
+		Cursor cursor = context.getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, PHONES_PROJECTION, PHONES_SELECTION,
+						PHONES_SELECTION_ARGS, ContactsContract.CommonDataKinds.Phone._ID);
 		if (cursor != null) try
 		{
 

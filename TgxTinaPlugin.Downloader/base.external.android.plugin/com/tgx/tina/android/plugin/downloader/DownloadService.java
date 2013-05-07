@@ -154,16 +154,18 @@ public class DownloadService
 	/**
 	 * Responds to a call to startService
 	 */
-	public void onStart(Intent intent, int startId) {
-		super.onStart(intent, startId);
-		//#debug verbose
+
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
 		base.tina.core.log.LogPrinter.v(Constants.TAG, "Service onStart");
 		updateFromProvider();
+		return super.onStartCommand(intent, flags, startId);
 	}
 
 	/**
 	 * Cleans up when the service is destroyed
 	 */
+	@Override
 	public void onDestroy() {
 		getContentResolver().unregisterContentObserver(mObserver);
 		//#debug verbose
@@ -227,7 +229,8 @@ public class DownloadService
 								base.tina.core.log.LogPrinter.v(Constants.TAG, "scheduling retry in " + wakeUp + "ms");
 								Intent intent = new Intent(Constants.ACTION_RETRY);
 								intent.setClassName("com.android.providers.downloads2", DownloadReceiver.class.getName());
-								alarms.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + wakeUp, PendingIntent.getBroadcast(DownloadService.this, 0, intent, PendingIntent.FLAG_ONE_SHOT));
+								alarms.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + wakeUp,
+												PendingIntent.getBroadcast(DownloadService.this, 0, intent, PendingIntent.FLAG_ONE_SHOT));
 							}
 						}
 						oldChars = null;
@@ -469,16 +472,26 @@ public class DownloadService
 		int statusColumn = cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_STATUS);
 		int failedColumn = cursor.getColumnIndexOrThrow(Constants.FAILED_CONNECTIONS);
 		int retryRedirect = cursor.getInt(cursor.getColumnIndexOrThrow(Constants.RETRY_AFTER_X_REDIRECT_COUNT));
-		DownloadInfo info = new DownloadInfo(cursor.getInt(cursor.getColumnIndexOrThrow(GlobalDownload._ID)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_URI)), cursor.getInt(cursor
-						.getColumnIndexOrThrow(GlobalDownload.COLUMN_NO_INTEGRITY)) == 1, cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_FILE_NAME_HINT)), cursor.getString(cursor
-						.getColumnIndexOrThrow(GlobalDownload._DATA)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_MIME_TYPE)), cursor.getInt(cursor
-						.getColumnIndexOrThrow(GlobalDownload.COLUMN_DESTINATION)), cursor.getInt(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_VISIBILITY)), cursor.getInt(cursor
-						.getColumnIndexOrThrow(GlobalDownload.COLUMN_CONTROL)), cursor.getInt(statusColumn), cursor.getInt(failedColumn), retryRedirect & 0xfffffff, retryRedirect >> 28, cursor.getLong(cursor
-						.getColumnIndexOrThrow(GlobalDownload.COLUMN_LAST_MODIFICATION)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_NOTIFICATION_PACKAGE)), cursor.getString(cursor
-						.getColumnIndexOrThrow(GlobalDownload.COLUMN_NOTIFICATION_CLASS)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_NOTIFICATION_EXTRAS)), cursor.getString(cursor
-						.getColumnIndexOrThrow(GlobalDownload.COLUMN_COOKIE_DATA)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_USER_AGENT)), cursor.getString(cursor
-						.getColumnIndexOrThrow(GlobalDownload.COLUMN_REFERER)), cursor.getInt(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_TOTAL_BYTES)), cursor.getInt(cursor
-						.getColumnIndexOrThrow(GlobalDownload.COLUMN_CURRENT_BYTES)), cursor.getString(cursor.getColumnIndexOrThrow(Constants.ETAG)),
+		DownloadInfo info = new DownloadInfo(cursor.getInt(cursor.getColumnIndexOrThrow(GlobalDownload._ID)), cursor.getString(cursor
+						.getColumnIndexOrThrow(GlobalDownload.COLUMN_URI)), cursor.getInt(cursor
+						.getColumnIndexOrThrow(GlobalDownload.COLUMN_NO_INTEGRITY)) == 1, cursor.getString(cursor
+						.getColumnIndexOrThrow(GlobalDownload.COLUMN_FILE_NAME_HINT)), cursor.getString(cursor
+						.getColumnIndexOrThrow(GlobalDownload._DATA)), cursor.getString(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_MIME_TYPE)),
+						cursor.getInt(cursor
+										.getColumnIndexOrThrow(GlobalDownload.COLUMN_DESTINATION)), cursor.getInt(cursor
+										.getColumnIndexOrThrow(GlobalDownload.COLUMN_VISIBILITY)), cursor.getInt(cursor
+										.getColumnIndexOrThrow(GlobalDownload.COLUMN_CONTROL)), cursor.getInt(statusColumn), cursor.getInt(failedColumn),
+						retryRedirect & 0xfffffff, retryRedirect >> 28, cursor.getLong(cursor
+										.getColumnIndexOrThrow(GlobalDownload.COLUMN_LAST_MODIFICATION)), cursor.getString(cursor
+										.getColumnIndexOrThrow(GlobalDownload.COLUMN_NOTIFICATION_PACKAGE)), cursor.getString(cursor
+										.getColumnIndexOrThrow(GlobalDownload.COLUMN_NOTIFICATION_CLASS)), cursor.getString(cursor
+										.getColumnIndexOrThrow(GlobalDownload.COLUMN_NOTIFICATION_EXTRAS)), cursor.getString(cursor
+										.getColumnIndexOrThrow(GlobalDownload.COLUMN_COOKIE_DATA)), cursor.getString(cursor
+										.getColumnIndexOrThrow(GlobalDownload.COLUMN_USER_AGENT)), cursor.getString(cursor
+										.getColumnIndexOrThrow(GlobalDownload.COLUMN_REFERER)), cursor.getInt(cursor
+										.getColumnIndexOrThrow(GlobalDownload.COLUMN_TOTAL_BYTES)), cursor.getInt(cursor
+										.getColumnIndexOrThrow(GlobalDownload.COLUMN_CURRENT_BYTES)), cursor.getString(cursor
+										.getColumnIndexOrThrow(Constants.ETAG)),
 						cursor.getInt(cursor.getColumnIndexOrThrow(Constants.MEDIA_SCANNED)) == 1);
 
 		//#ifdef debug
@@ -559,7 +572,8 @@ public class DownloadService
 		info.mMimeType = stringFromCursor(info.mMimeType, cursor, GlobalDownload.COLUMN_MIME_TYPE);
 		info.mDestination = cursor.getInt(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_DESTINATION));
 		int newVisibility = cursor.getInt(cursor.getColumnIndexOrThrow(GlobalDownload.COLUMN_VISIBILITY));
-		if (info.mVisibility == GlobalDownload.VISIBILITY_VISIBLE_NOTIFY_COMPLETED && newVisibility != GlobalDownload.VISIBILITY_VISIBLE_NOTIFY_COMPLETED && GlobalDownload.isStatusCompleted(info.mStatus))
+		if (info.mVisibility == GlobalDownload.VISIBILITY_VISIBLE_NOTIFY_COMPLETED && newVisibility != GlobalDownload.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+			&& GlobalDownload.isStatusCompleted(info.mStatus))
 		{
 			mNotifier.mNotificationMgr.cancel(info.mId);
 		}

@@ -15,6 +15,10 @@
  *******************************************************************************/
 package com.tgx.tina.android.plugin.downloader;
 
+import com.tgx.tina.android.db.api.provider.BaseProviderConfig;
+import com.tgx.tina.android.db.api.provider.BaseTable;
+import com.tgx.tina.android.db.api.provider.Utils;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -26,9 +30,6 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Process;
-import base.tina.external.android.db.api.provider.BaseProviderConfig;
-import base.tina.external.android.db.api.provider.BaseTable;
-import base.tina.external.android.db.api.provider.Utils;
 
 public class TableDownload
 				extends
@@ -247,7 +248,10 @@ public class TableDownload
 		if (rowID != -1)
 		{
 			context.startService(new Intent(context, DownloadService.class));
+
 			ret = Uri.parse(GlobalDownload.CONTENT_URI + "/" + rowID);
+			//#debug
+			base.tina.core.log.LogPrinter.d(Constants.TAG, "ret:" + ret);
 			context.getContentResolver().notifyChange(uri, null);
 		}
 		else
@@ -260,7 +264,8 @@ public class TableDownload
 	}
 
 	@Override
-	public Cursor query(SQLiteDatabase db, Context context, int pathIndex, Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+	public Cursor query(SQLiteDatabase db, Context context, int pathIndex, Uri uri, String[] projection, String selection, String[] selectionArgs,
+					String sortOrder) {
 		Utils.validateSelection(selection, mReadableColumnsSet);
 
 		SQLiteQueryBuilder qb = new SQLiteQueryBuilder();

@@ -1,5 +1,4 @@
 debug=0
 LOG_DIR="SDCARD"
 LOG_NAME="TGX_TINA"
-buf_activity=true
-app_log=false
+MULTI_ACTIVITY=true

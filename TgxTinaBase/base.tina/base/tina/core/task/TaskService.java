@@ -1,17 +1,17 @@
 /*******************************************************************************
  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  *******************************************************************************/
 package base.tina.core.task;
 
@@ -40,6 +40,7 @@ import base.tina.core.task.infc.ITaskRun.CommitAction;
 import base.tina.core.task.infc.ITaskTimeout;
 import base.tina.core.task.infc.ITaskWakeTimer;
 
+
 /**
  * 此处所使用的线程池模型已于2013-2-11日升级为Doug Lea 撰写的新版本代码
  * 依然提供了对特定线程ID进行内部分发的特性,依然未提供shutdown/shutdownNow方法 虽然已经提供了对应的程序管理与控制函数,但未启用
@@ -48,45 +49,45 @@ import base.tina.core.task.infc.ITaskWakeTimer;
  * 
  * @since 2013-2-11
  * @author Zhangzhuo
+ * @version 0.9.1
  */
 
 public class TaskService
-				implements
-				Comparator<Task>,
-				IDisposable
+        implements
+        Comparator<Task>,
+        IDisposable
 {
-	final static byte							SERVICE_TASK_INIT		= -1;
-	final static byte							SERVICE_PROCESSING		= SERVICE_TASK_INIT + 1;
-	final static byte							SERVICE_SCHEDULE		= SERVICE_PROCESSING + 1;
-	final static byte							SERVICE_NOTIFYOBSERVER	= SERVICE_SCHEDULE + 1;
-	final static byte							SERVICE_DOWN			= -128;
-
-	final static byte							LISTENER_INITIAL_NUM	= 7;
-
-	final Processor								processor;
-	final HashMap<Integer, ITaskListener>		listeners;
-	final ConcurrentLinkedQueue<ITaskResult>	responseQueue;
-	protected final ScheduleQueue<Task>			mainQueue;
-
-	final ReentrantLock							mainLock				= new ReentrantLock();
-	final ReentrantLock							runLock					= new ReentrantLock();
-
-	protected TaskService()
-	{
+	final static byte                        SERVICE_TASK_INIT      = -1;
+	final static byte                        SERVICE_PROCESSING     = SERVICE_TASK_INIT + 1;
+	final static byte                        SERVICE_SCHEDULE       = SERVICE_PROCESSING + 1;
+	final static byte                        SERVICE_NOTIFYOBSERVER = SERVICE_SCHEDULE + 1;
+	final static byte                        SERVICE_DOWN           = -128;
+	
+	final static byte                        LISTENER_INITIAL_NUM   = 7;
+	
+	final Processor                          processor;
+	final HashMap<Integer, ITaskListener>    listeners;
+	final ConcurrentLinkedQueue<ITaskResult> responseQueue;
+	protected final ScheduleQueue<Task>      mainQueue;
+	
+	final ReentrantLock                      mainLock               = new ReentrantLock();
+	final ReentrantLock                      runLock                = new ReentrantLock();
+	
+	protected TaskService() {
 		listeners = new HashMap<Integer, ITaskListener>(LISTENER_INITIAL_NUM);
 		mainQueue = new ScheduleQueue<Task>(this, this);
 		responseQueue = new ConcurrentLinkedQueue<ITaskResult>();
 		processor = new Processor();
 		_instance = this;
 	}
-
-	protected static TaskService	_instance;
-
+	
+	protected static TaskService _instance;
+	
 	public static TaskService getInstance() {
 		if (_instance == null) throw new NullPointerException("No create service!");
 		return _instance;
 	}
-
+	
 	/**
 	 * TaskService 启动函数 在此之前需要将listener都加入到监听队列中
 	 */
@@ -94,27 +95,27 @@ public class TaskService
 		processor.start();
 		Thread.yield();
 	}
-
+	
 	public final void stopService() {
 		processor.processing = false;
 		processor.interrupt();
 	}
-
+	
 	protected void setScheduleAlarmTime(long RTC_WakeTime) {
 	}
-
+	
 	protected void noScheduleAlarmTime() {
-
+		
 	}
-
+	
 	protected void onProcessorStop() {
-
+		
 	}
-
+	
 	protected ITaskWakeTimer setTaskAlarmTime(long RTC_WakeTime, ITaskWakeTimer owner, ITaskRun task) {
 		return null;
 	}
-
+	
 	/*
 	 * priority > 0时没有任何可能相等的情况 if (task1.priority > task2.priority) return -1;
 	 * if (task1.priority < task2.priority) return 1; if (task1.inQueueIndex <
@@ -134,7 +135,7 @@ public class TaskService
 		if (result == 0) result = task1.hashCode() - task2.hashCode();
 		return result;
 	}
-
+	
 	public final boolean addListener(ITaskListener listener) {
 		if (listener == null) throw new NullPointerException();
 		ReentrantLock mainLock = this.mainLock;
@@ -160,13 +161,13 @@ public class TaskService
 		else base.tina.core.log.LogPrinter.w(null, "add listener" + listener.toString() + " faild!");
 		return false;
 	}
-
-	private ITaskListener	recycleListener;
-
+	
+	private ITaskListener recycleListener;
+	
 	public final void setRecycle(ITaskListener recycle) {
 		this.recycleListener = recycle;
 	}
-
+	
 	public final ITaskListener removeListener(int bindSerial) {
 		if (bindSerial == 0) return null;
 		ReentrantLock mainLock = this.mainLock;
@@ -180,15 +181,15 @@ public class TaskService
 		}
 		return null;
 	}
-
+	
 	public final boolean requestService(Task task, boolean schedule) {
 		return requestService(task, schedule, 0);
 	}
-
+	
 	public final boolean requestService(Task task, int bindSerial) {
 		return requestService(task, false, bindSerial);
 	}
-
+	
 	/**
 	 * @param task
 	 *            正在执行和已经完成的任务不能再次进入任务队列
@@ -213,11 +214,8 @@ public class TaskService
 		base.tina.core.log.LogPrinter.d(null, "offer: " + success);
 		return success;
 	}
-
-	public final boolean requestService(Task task, boolean isSchedule, int timelimit, long delayTimeMills, 
-					byte retryLimit, Object attachment, ITaskProgress progress, int timeOutSecound,
-					ITaskTimeout<?> taskTimeout,
-					int bindSerial) {
+	
+	public final boolean requestService(Task task, boolean isSchedule, int timelimit, long delayTimeMills, byte retryLimit, Object attachment, ITaskProgress progress, int timeOutSecound, ITaskTimeout<?> taskTimeout, int bindSerial) {
 		if (task == null) throw new NullPointerException();
 		task.timeLimit = timelimit;
 		task.setRetryLimit(retryLimit);
@@ -227,17 +225,17 @@ public class TaskService
 		task.timeOut(timeOutSecound, taskTimeout);
 		return requestService(task, isSchedule, bindSerial);
 	}
-
+	
 	public final boolean requestServiceRetry(Task task, int timeOutSecound) {
 		if (task == null) throw new NullPointerException();
 		task.timeOut(timeOutSecound, task.timeoutCall);
 		return requestService(task, false, task.getListenSerial());
 	}
-
+	
 	public final boolean requestService(Task task, long delayTime, int bindSerial) {
 		return requestService(task, false, -1, delayTime, (byte) 0, null, null, 0, null, bindSerial);
 	}
-
+	
 	/**
 	 * @param threadID
 	 * @param available
@@ -249,11 +247,11 @@ public class TaskService
 		Worker worker = processor.executor.id2work2.get(threadID);
 		if (worker != null)
 		{
-
+			
 		}
 		return false;
 	}
-
+	
 	/**
 	 * @since 2011-6-10 接口变更,取消存在性检查,迭代过程本身效能太低
 	 * @author Zhangzhuo
@@ -267,11 +265,11 @@ public class TaskService
 		taskResult.setResponse(false);
 		return responseQueue.offer(taskResult);
 	}
-
+	
 	public final void commitNotify() {
 		wakeUp();
 	}
-
+	
 	protected final void wakeUp() {
 		if (processor != null && !processor.isInterrupted()) try
 		{
@@ -283,7 +281,7 @@ public class TaskService
 			base.tina.core.log.LogPrinter.i(null, "processorDo interrupt", e);
 		}
 	}
-
+	
 	private final void notifyObserver() {
 		final ReentrantLock mainLock = this.mainLock;
 		mainLock.lock();
@@ -300,6 +298,7 @@ public class TaskService
 				isHandled = false;
 				if (!listeners.isEmpty())
 				{
+					
 					int listenSerial = receive.getListenSerial();
 					if (listenSerial != 0)
 					{
@@ -318,29 +317,33 @@ public class TaskService
 						{
 							if (receive.isDisposable() && isHandled) receive.dispose();
 						}
-						else throw new RuntimeException(receive.getClass().getName() + ":No right bind listener!");
-					}
-					else
-					{
-						for (ITaskListener listener : listeners.values())
+						else
 						{
-							if (!listener.isEnable()) continue;
-							try
-							{
-								isHandled = isHandled(receive, listener);
-							}
-							catch (Exception e)
-							{
-								//#debug warn
-								e.printStackTrace();
-								// 防止回调出错,而导致Processor线程被销毁的风险,忽略任何在回调过程中产生的错误
-							}
-							finally
-							{
-								if (receive.isDisposable() && isHandled) receive.dispose();
-							}
-							if (isHandled) break;
+							//#debug warn 
+							base.tina.core.log.LogPrinter.w(null, ":No right bind listener!" + listenSerial);
+							//#ifdef check_bind_serial
+							//$throw new RuntimeException(receive.getClass().getName() + ":No right bind listener!" + listenSerial);
+							//#endif
 						}
+					}
+					if (!isHandled) for (ITaskListener listener : listeners.values())
+					{
+						if (!listener.isEnable()) continue;
+						try
+						{
+							isHandled = isHandled(receive, listener);
+						}
+						catch (Exception e)
+						{
+							//#debug warn
+							e.printStackTrace();
+							// 防止回调出错,而导致Processor线程被销毁的风险,忽略任何在回调过程中产生的错误
+						}
+						finally
+						{
+							if (receive.isDisposable() && isHandled) receive.dispose();
+						}
+						if (isHandled) break;
 					}
 				}
 				if (!isHandled && recycleListener != null) try
@@ -368,40 +371,39 @@ public class TaskService
 			mainLock.unlock();
 		}
 	}
-
+	
 	private final boolean isHandled(ITaskResult receive, ITaskListener listener) {
 		int result = receive.getSerialNum();
 		if (result == Integer.MIN_VALUE || result == Integer.MAX_VALUE) return false;
 		//#debug info
-		base.tina.core.log.LogPrinter.i(null, receive.hasError() ? "exCaught : " : "to handle : " + receive);
+		base.tina.core.log.LogPrinter.i(null, receive.hasError() ? "exCaught : " : "to handle : " + receive.toString());
 		return receive.hasError() ? listener.exceptionCaught(receive, this) : listener.ioHandle(receive, this);
 	}
-
+	
 	private final class Processor
-					extends
-					Thread
-					implements
-					IDisposable
+	        extends
+	        Thread
+	        implements
+	        IDisposable
 	{
-		public Processor()
-		{
+		public Processor() {
 			processing = true;
 			setName("taskService-processor");
 		}
-
+		
 		@Override
 		public final void dispose() {
 			executor = null;
 		}
-
+		
 		@Override
 		public final boolean isDisposable() {
 			return true;
 		}
-
-		volatile boolean	processing;
-		Executor			executor;
-
+		
+		volatile boolean processing;
+		Executor         executor;
+		
 		public final void run() {
 			final ScheduleQueue<Task> mainQueue = TaskService.this.mainQueue;
 			Task curTask = null;
@@ -491,60 +493,59 @@ public class TaskService
 			onProcessorStop();
 		}
 	}
-
-	private static final int	COUNT_BITS	= Integer.SIZE - 3;
-	private static final int	CAPACITY	= (1 << COUNT_BITS) - 1;
-
-	private static final int	RUNNING		= -1 << COUNT_BITS;
-	private static final int	SHUTDOWN	= 0 << COUNT_BITS;
-	private static final int	STOP		= 1 << COUNT_BITS;
-	private static final int	TIDYING		= 2 << COUNT_BITS;
-	private static final int	TERMINATED	= 3 << COUNT_BITS;
-
+	
+	private static final int COUNT_BITS = Integer.SIZE - 3;
+	private static final int CAPACITY   = (1 << COUNT_BITS) - 1;
+	
+	private static final int RUNNING    = -1 << COUNT_BITS;
+	private static final int SHUTDOWN   = 0 << COUNT_BITS;
+	private static final int STOP       = 1 << COUNT_BITS;
+	private static final int TIDYING    = 2 << COUNT_BITS;
+	private static final int TERMINATED = 3 << COUNT_BITS;
+	
 	private static int runStateOf(int c) {
 		return c & ~CAPACITY;
 	}
-
+	
 	private static int workerCountOf(int c) {
 		return c & CAPACITY;
 	}
-
+	
 	private static int ctlOf(int rs, int wc) {
 		return rs | wc;
 	}
-
+	
 	private static boolean runStateLessThan(int c, int s) {
 		return c < s;
 	}
-
+	
 	private static boolean runStateAtLeast(int c, int s) {
 		return c >= s;
 	}
-
+	
 	private static boolean isRunning(int c) {
 		return c < SHUTDOWN;
 	}
-
+	
 	final class Executor
 	{
-		final AtomicInteger				ctl			= new AtomicInteger(ctlOf(RUNNING, 0));
-		final ReentrantLock				mainLock	= new ReentrantLock();
-		final Condition					termination	= mainLock.newCondition();
-		final BlockingQueue<Task>		workQueue;
-		final ScheduleQueue<Task>		mainQueue;
-		final HashSet<Worker>			workers		= new HashSet<Worker>();
-		final HashMap<Integer, Worker>	id2work2	= new HashMap<Integer, Worker>();
-		long							completedTaskCount;
-		volatile boolean				allowCoreThreadTimeOut;
-		volatile int					corePoolSize;
-		volatile ThreadFactory			threadFactory;
-		volatile int					maximumPoolSize;
-		volatile long					keepAliveTime;
-		int								largestPoolSize;
-		static final boolean			ONLY_ONE	= true;
-
-		public Executor(ScheduleQueue<Task> mainQueue)
-		{
+		final AtomicInteger            ctl         = new AtomicInteger(ctlOf(RUNNING, 0));
+		final ReentrantLock            mainLock    = new ReentrantLock();
+		final Condition                termination = mainLock.newCondition();
+		final BlockingQueue<Task>      workQueue;
+		final ScheduleQueue<Task>      mainQueue;
+		final HashSet<Worker>          workers     = new HashSet<Worker>();
+		final HashMap<Integer, Worker> id2work2    = new HashMap<Integer, Worker>();
+		long                           completedTaskCount;
+		volatile boolean               allowCoreThreadTimeOut;
+		volatile int                   corePoolSize;
+		volatile ThreadFactory         threadFactory;
+		volatile int                   maximumPoolSize;
+		volatile long                  keepAliveTime;
+		int                            largestPoolSize;
+		static final boolean           ONLY_ONE    = true;
+		
+		public Executor(ScheduleQueue<Task> mainQueue) {
 			threadFactory = new WorkerFactory();
 			corePoolSize = 0;
 			allowCoreThreadTimeOut = true;
@@ -553,33 +554,32 @@ public class TaskService
 			workQueue = new SynchronousQueue<Task>();
 			this.mainQueue = mainQueue;
 		}
-
+		
 		final class WorkerFactory
-						implements
-						ThreadFactory
+		        implements
+		        ThreadFactory
 		{
-			final AtomicInteger	id;
-
-			public WorkerFactory()
-			{
+			final AtomicInteger id;
+			
+			public WorkerFactory() {
 				id = new AtomicInteger(0);
 			}
-
+			
 			@Override
 			public Thread newThread(Runnable r) {
 				if (id.get() == maximumPoolSize) id.set(0);
 				return new Thread(r, "TaskService" + "-pool-" + id.getAndIncrement());
 			}
 		}
-
+		
 		private boolean compareAndIncrementWorkerCount(int expect) {
 			return ctl.compareAndSet(expect, expect + 1);
 		}
-
+		
 		private boolean compareAndDecrementWorkerCount(int expect) {
 			return ctl.compareAndSet(expect, expect - 1);
 		}
-
+		
 		private void decrementWorkerCount() {
 			do
 			{
@@ -588,7 +588,7 @@ public class TaskService
 			}
 			while (!compareAndDecrementWorkerCount(ctl.get()));
 		}
-
+		
 		public void execute(Task task) {
 			if (task == null) throw new NullPointerException();
 			if (task.threadId != 0)
@@ -609,7 +609,7 @@ public class TaskService
 					lock.unlock();
 				}
 			}
-
+			
 			int c = ctl.get();
 			if (workerCountOf(c) < corePoolSize)
 			{
@@ -624,30 +624,30 @@ public class TaskService
 			}
 			else if (!addWorker(task, false)) reject(task);
 		}
-
+		
 		private void reject(Task task) {
 			boolean success = mainQueue.offer(task);
 			if (!success) System.err.println("reject task failed! " + task + " | " + mainQueue);
 		}
-
+		
 		private Task getTask(Worker w) {
 			boolean timedOut = false; // Did the last poll() time out?
-
+			
 			retry:
 			for (;;)
 			{
 				int c = ctl.get();
 				int rs = runStateOf(c);
-
+				
 				// Check if queue empty only if necessary.
 				if (rs >= SHUTDOWN && (rs >= STOP || workQueue.isEmpty()))
 				{
 					decrementWorkerCount();
 					return null;
 				}
-
+				
 				boolean timed; // Are workers subject to culling?
-
+				
 				for (;;)
 				{
 					int wc = workerCountOf(c);
@@ -659,7 +659,7 @@ public class TaskService
 					// else CAS failed due to workerCount change; retry inner
 					// loop
 				}
-
+				
 				try
 				{
 					Task t = null;
@@ -674,12 +674,12 @@ public class TaskService
 				}
 			}
 		}
-
+		
 		private void processWorkerExit(Worker w, boolean completedAbruptly) {
 			if (completedAbruptly) // If abrupt, then workerCount wasn't
-									// adjusted
+			                       // adjusted
 			decrementWorkerCount();
-
+			
 			final ReentrantLock mainLock = this.mainLock;
 			mainLock.lock();
 			try
@@ -691,9 +691,9 @@ public class TaskService
 			{
 				mainLock.unlock();
 			}
-
+			
 			tryTerminate();
-
+			
 			int c = ctl.get();
 			if (runStateLessThan(c, STOP))
 			{
@@ -702,12 +702,12 @@ public class TaskService
 					int min = allowCoreThreadTimeOut ? 0 : corePoolSize;
 					if (min == 0 && !workQueue.isEmpty()) min = 1;
 					if (workerCountOf(c) >= min) return; // replacement not
-															// needed
+					                                     // needed
 				}
 				addWorker(null, false);
 			}
 		}
-
+		
 		final void tryTerminate() {
 			for (;;)
 			{
@@ -718,7 +718,7 @@ public class TaskService
 					interruptIdleWorkers(ONLY_ONE);
 					return;
 				}
-
+				
 				final ReentrantLock mainLock = this.mainLock;
 				mainLock.lock();
 				try
@@ -744,7 +744,7 @@ public class TaskService
 				// else retry on failed CAS
 			}
 		}
-
+		
 		public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
 			long nanos = unit.toNanos(timeout);
 			final ReentrantLock mainLock = this.mainLock;
@@ -763,23 +763,23 @@ public class TaskService
 				mainLock.unlock();
 			}
 		}
-
+		
 		public boolean remove(Task task) {
 			boolean removed = workQueue.remove(task);
 			tryTerminate(); // In case SHUTDOWN and now empty
 			return removed;
 		}
-
+		
 		private boolean addWorker(Task firstTask, boolean core) {
 			retry:
 			for (;;)
 			{
 				int c = ctl.get();
 				int rs = runStateOf(c);
-
+				
 				// Check if queue empty only if necessary.
 				if (rs >= SHUTDOWN && !(rs == SHUTDOWN && firstTask == null && !workQueue.isEmpty())) return false;
-
+				
 				for (;;)
 				{
 					int wc = workerCountOf(c);
@@ -791,10 +791,10 @@ public class TaskService
 					// loop
 				}
 			}
-
+			
 			Worker w = new Worker(firstTask);
 			Thread t = w.thread;
-
+			
 			final ReentrantLock mainLock = this.mainLock;
 			mainLock.lock();
 			try
@@ -804,14 +804,14 @@ public class TaskService
 				// shut down before lock acquired.
 				int c = ctl.get();
 				int rs = runStateOf(c);
-
+				
 				if (t == null || (rs >= SHUTDOWN && !(rs == SHUTDOWN && firstTask == null)))
 				{
 					decrementWorkerCount();
 					tryTerminate();
 					return false;
 				}
-
+				
 				workers.add(w);
 				int s = workers.size();
 				if (s > largestPoolSize) largestPoolSize = s;
@@ -820,7 +820,7 @@ public class TaskService
 			{
 				mainLock.unlock();
 			}
-
+			
 			t.start();
 			// It is possible (but unlikely) for a thread to have been
 			// added to workers, but not yet started, during transition to
@@ -828,10 +828,10 @@ public class TaskService
 			// because Thread.interrupt is not guaranteed to have any effect
 			// interrupt).
 			if (runStateOf(ctl.get()) == STOP && !t.isInterrupted()) t.interrupt();
-
+			
 			return true;
 		}
-
+		
 		private void interruptIdleWorkers(boolean onlyOne) {
 			final ReentrantLock mainLock = this.mainLock;
 			mainLock.lock();
@@ -862,7 +862,7 @@ public class TaskService
 				mainLock.unlock();
 			}
 		}
-
+		
 		void advanceRunState(int targetState) {
 			while (true)
 			{
@@ -870,7 +870,7 @@ public class TaskService
 				if (runStateAtLeast(c, targetState) || ctl.compareAndSet(c, ctlOf(targetState, workerCountOf(c)))) break;
 			}
 		}
-
+		
 		public void shutdown() {
 			final ReentrantLock mainLock = this.mainLock;
 			mainLock.lock();
@@ -885,40 +885,39 @@ public class TaskService
 			}
 			tryTerminate();
 		}
-
+		
 		private void interruptIdleWorkers() {
 			interruptIdleWorkers(false);
 		}
-
+		
 		final class Worker
-						extends
-						AbstractQueuedSynchronizer
-						implements
-						Runnable
+		        extends
+		        AbstractQueuedSynchronizer
+		        implements
+		        Runnable
 		{
-			private static final long	serialVersionUID	= 3833487996901286223L;
-
-			final BlockingQueue<Task>	taskBlkQueue;
-			Task						firstTask;
-			Task						lastTask;
-			volatile int				taskThreadId;
-			volatile long				completedTasks;
-			IWakeLock					wakeLock;
-			Thread						thread;
-
-			public Worker(Task task)
-			{
+			private static final long serialVersionUID = 3833487996901286223L;
+			
+			final BlockingQueue<Task> taskBlkQueue;
+			Task                      firstTask;
+			Task                      lastTask;
+			volatile int              taskThreadId;
+			volatile long             completedTasks;
+			IWakeLock                 wakeLock;
+			Thread                    thread;
+			
+			public Worker(Task task) {
 				firstTask = task;
 				taskBlkQueue = new LinkedBlockingQueue<Task>();
 				wakeLock = getWakeLock();
 				thread = threadFactory.newThread(this);
 				if (wakeLock != null && thread != null) wakeLock.initialize("worker#" + thread.getId());
 			}
-
+			
 			protected boolean isHeldExclusively() {
 				return getState() == 1;
 			}
-
+			
 			protected boolean tryAcquire(int unused) {
 				if (compareAndSetState(0, 1))
 				{
@@ -927,36 +926,36 @@ public class TaskService
 				}
 				return false;
 			}
-
+			
 			protected boolean tryRelease(int unused) {
 				setExclusiveOwnerThread(null);
 				setState(0);
 				return true;
 			}
-
+			
 			public void lock() {
 				acquire(1);
 			}
-
+			
 			public boolean tryLock() {
 				return tryAcquire(1);
 			}
-
+			
 			public void unlock() {
 				release(1);
 			}
-
+			
 			public boolean isLocked() {
 				return isHeldExclusively();
 			}
-
+			
 			@Override
 			public void run() {
 				runWorker(this);
 			}
-
+			
 		}
-
+		
 		final void runWorker(Worker w) {
 			Task task = w.firstTask;
 			Task lastTask = task;
@@ -990,7 +989,7 @@ public class TaskService
 								}
 							}
 							if (task.wakeLock && w.wakeLock != null) w.wakeLock.acquire();// 并非所有的任务都强制要求cpu
-																							// 唤醒状态保护.
+							                                                              // 唤醒状态保护.
 							try
 							{
 								task.beforeRun();
@@ -1051,10 +1050,10 @@ public class TaskService
 							{
 								int c = ctl.get();
 								int rs = runStateOf(c);
-
+								
 								// Check if queue empty only if necessary.
 								if (rs >= SHUTDOWN) break workLoop;
-
+								
 								for (;;)
 								{
 									if (compareAndIncrementWorkerCount(c)) break retry;
@@ -1083,33 +1082,33 @@ public class TaskService
 				processWorkerExit(w, completedAbruptly);
 			}
 		}
-
+		
 		private void clearInterruptsForTaskRun() {
 			if (runStateLessThan(ctl.get(), STOP) && Thread.interrupted() && runStateAtLeast(ctl.get(), STOP)) Thread.currentThread().interrupt();
 		}
 	}
-
+	
 	public static interface IWakeLock
 	{
 		public void acquire();
-
+		
 		public void release();
-
+		
 		public void initialize(String lockName);
 	}
-
+	
 	protected IWakeLock getWakeLock() {
 		return null;
 	}
-
+	
 	@Override
 	public void dispose() {
 		_instance = null;
 	}
-
+	
 	@Override
 	public boolean isDisposable() {
 		return true;
 	}
-
+	
 }

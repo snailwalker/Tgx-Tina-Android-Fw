@@ -36,18 +36,18 @@ public abstract class BaseBridge
 				implements
 				ServiceConnection
 {
-	protected final Context	mContext;
-	private final IBridge	mIBridge;
-	private Handler			recvHandler;
-	private boolean			isBridgeOn;
+	protected final Context		mContext;
+	private final IBridge<?>	mIBridge;
+	private Handler				recvHandler;
+	private boolean				isBridgeOn;
 
-	protected BaseBridge(Context context, IBridge iBridge, Handler handler)
+	protected BaseBridge(Context context, IBridge<?> iBridge, Handler handler)
 	{
 		if (iBridge == null || context == null) throw new NullPointerException();
 		mContext = context;
 		mIBridge = iBridge;
 		recvHandler = handler;
-		service_action = context.getPackageName() + DefaultConsts.serviceAction + hashCode();
+		service_action = context.getPackageName() + "$" + this.getClass().getSimpleName() + "$" + DefaultConsts.serviceAction + hashCode();
 	}
 
 	private RemoteService	rServiceStub;
@@ -62,8 +62,8 @@ public abstract class BaseBridge
 			String sActionStr = rServiceStub.sActionStr(service_action);
 			IntentFilter serviceFilter = new IntentFilter(sActionStr);
 			mContext.registerReceiver(clientReceiver = new ClientReceiver(), serviceFilter, mIBridge.actionCPermission(), recvHandler);
-			sendCMD(DefaultConsts.SERVERACTION_CLIENT_START, null);
 			isBridgeOn = true;
+			sendDefaultCMD(DefaultConsts.SERVERACTION_CLIENT_START);
 			onRemoteConnected();
 			//#debug verbose
 			base.tina.core.log.LogPrinter.v(null, "Bridge Connected");
@@ -79,18 +79,22 @@ public abstract class BaseBridge
 
 	protected abstract void onRemoteConnectedEx();
 
-	public void startBind(String action) {
+	public final void startBind(String action) {
 		if (isBridgeOn()) return;
 		if (action == null || "".equals(action.trim())) throw new IllegalArgumentException("remote_action is invaild!");
 		mContext.startService(new Intent(action));
 		mContext.bindService(new Intent(action), this, Context.BIND_AUTO_CREATE);
 	}
 
-	public void startBind() {
+	public final void startBind() {
+		//#debug 
+		base.tina.core.log.LogPrinter.d(null, "Bridge Bind:" + this.getClass().getName() + "@" + hashCode());
 		startBind(mIBridge.remoteBootAction());
 	}
 
-	public void stopBind() {
+	public final void stopBind() {
+		//#debug 
+		base.tina.core.log.LogPrinter.d(null, "Bridge UnBind:" + this.getClass().getName() + "@" + hashCode());
 		mContext.unbindService(this);
 	}
 
@@ -127,6 +131,8 @@ public abstract class BaseBridge
 	 */
 	public final void changeCurHandler(Handler handler) {
 		recvHandler = handler;
+		//#debug 
+		base.tina.core.log.LogPrinter.d(null, "Handle:" + recvHandler);
 	}
 
 	private final class ClientReceiver
@@ -165,6 +171,8 @@ public abstract class BaseBridge
 				}
 				onReceiveUpdate(cmd, bundle);
 				if (hasExternal) msg.setData(bundle);
+				//#debug
+				base.tina.core.log.LogPrinter.d(null, "Recv:" + recvHandler);
 				if (recvHandler != null) recvHandler.sendMessage(msg);
 				else System.err.println("recevierHandler is null!");
 			}
@@ -182,16 +190,35 @@ public abstract class BaseBridge
 	 * @param bundle
 	 */
 	public final void sendCMD(int cmd, Bundle bundle) {
+		if (cmd < DefaultConsts.SERVERACTION_CLIENT_START) return;
+		sendInner(cmd, bundle);
+	}
+
+	private final void sendInner(int cmd, Bundle bundle) {
 		//#debug info
-		base.tina.core.log.LogPrinter.i(this.getClass().getSimpleName(), "Send CMD:" + cmd);
+		base.tina.core.log.LogPrinter.i(null, this.getClass().getSimpleName() + "Send CMD:" + cmd);
 		if (bundle == null) bundle = new Bundle();
 		bundle.putInt("cmd", cmd);
 		sendCMD(bundle);
 	}
 
-	public final void sendCMD(Bundle bundle) {
+	private final void sendDefaultCMD(int cmd) {
+		Bundle bundle = new Bundle();
+		bundle.putInt("cmd", cmd);
+		Intent intent = new Intent(service_action);
+		ArrayList<Bundle> bundleList = new ArrayList<Bundle>();
+		bundleList.add(bundle);
+		intent.putParcelableArrayListExtra("bundle", bundleList);
+		//#debug
+		base.tina.core.log.LogPrinter.i(null, "SendDefaultCMD:" + cmd);
+		mContext.sendBroadcast(intent, mIBridge.actionSPermission());
+	}
+
+	private final void sendCMD(Bundle bundle) {
 		if (bundle != null) broadcastQueue.add(bundle);
-		if (broadcastQueue.isEmpty() || sentCondition.get()) return;
+		//#debug
+		base.tina.core.log.LogPrinter.v(null, "QueueEmpty:" + broadcastQueue.isEmpty() + " |Condition: " + sentCondition.get() + " |BridgeOk:" + isBridgeOn);
+		if (broadcastQueue.isEmpty() || sentCondition.get() || !isBridgeOn) return;
 		for (;;)
 		{
 			boolean sent = sentCondition.get();
@@ -203,6 +230,8 @@ public abstract class BaseBridge
 				Intent intent = new Intent(service_action);
 				intent.putParcelableArrayListExtra("bundle", bundleList);
 				mContext.sendBroadcast(intent, mIBridge.actionSPermission());
+				//#debug
+				base.tina.core.log.LogPrinter.v(null, "BroadCast: Sent Over!");
 				break;
 			}
 		}

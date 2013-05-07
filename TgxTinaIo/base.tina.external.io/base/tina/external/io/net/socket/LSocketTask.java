@@ -1,19 +1,19 @@
- /*******************************************************************************
-  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
-  *
-  * Licensed under the Apache License, Version 2.0 (the "License");
-  * you may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at
-  *
-  * http://www.apache.org/licenses/LICENSE-2.0
-  *
-  * Unless required by applicable law or agreed to in writing, software
-  * distributed under the License is distributed on an "AS IS" BASIS,
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  *******************************************************************************/
- package base.tina.external.io.net.socket;
+/*******************************************************************************
+ * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ *******************************************************************************/
+package base.tina.external.io.net.socket;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -38,22 +38,22 @@ import base.tina.core.task.infc.ITaskResult;
 import base.tina.external.io.IoFilter;
 import base.tina.external.io.IoSession;
 
+
 public class LSocketTask
-		extends
-		Task
-		implements
-		ISelectorX
+        extends
+        Task
+        implements
+        ISelectorX
 {
-	static LSocketTask							singleInstance;
-	public final static int						SerialNum	= CSocketTask.SerialNum + 1;
-
-	private Selector							selector, selectorX, swap_selector;
-	final ConcurrentLinkedQueue<CSocketTask>	toRegister;
-	final LinkedList<SocketTask>				timeOutTasks;
-	final ConcurrentLinkedQueue<SocketTask>		todoTasks;
-
-	private LSocketTask()
-	{
+	static LSocketTask                       singleInstance;
+	public final static int                  SerialNum = CSocketTask.SerialNum + 1;
+	
+	private Selector                         selector, selectorX, swap_selector;
+	final ConcurrentLinkedQueue<CSocketTask> toRegister;
+	final LinkedList<SocketTask>             timeOutTasks;
+	final ConcurrentLinkedQueue<SocketTask>  todoTasks;
+	
+	private LSocketTask() {
 		super(SerialNum);
 		toRegister = new ConcurrentLinkedQueue<CSocketTask>();
 		todoTasks = new ConcurrentLinkedQueue<SocketTask>();
@@ -61,12 +61,12 @@ public class LSocketTask
 		if (singleInstance != null) throw new IllegalStateException("create more Lsocket");
 		singleInstance = this;
 	}
-
+	
 	@Override
 	public int getSerialNum() {
 		return SerialNum;
 	}
-
+	
 	@Override
 	public void initTask() {
 		isBloker = true;
@@ -74,21 +74,21 @@ public class LSocketTask
 		// -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.EPollSelectorProvider
 		super.initTask();
 	}
-
-	final AtomicBoolean	disConnectAll	= new AtomicBoolean(false);
-	final AtomicBoolean	hasDisConnect	= new AtomicBoolean(false);
-	volatile long		delayTime, waitStart, idleTime;
-	final AtomicBoolean	wakenUp			= new AtomicBoolean(false);
-	private int			selectorError;
-
+	
+	final AtomicBoolean disConnectAll = new AtomicBoolean(false);
+	final AtomicBoolean hasDisConnect = new AtomicBoolean(false);
+	volatile long       delayTime, waitStart, idleTime;
+	final AtomicBoolean wakenUp       = new AtomicBoolean(false);
+	private int         selectorError, selectorXCount;
+	
 	final void offerWrite(SocketTask socketTask) {
 		if (todoTasks.offer(socketTask) && socketTask.ioSession != null) socketTask.ioSession.offerWrite();
 	}
-
+	
 	final void exchangeSelector(CSocketTask cSocketTask) {
 		toRegister.offer(cSocketTask);
 	}
-
+	
 	@Override
 	public final void run() throws Exception {
 		if (selector == null) selectorX = selector = SelectorProvider.provider().openSelector();
@@ -127,7 +127,7 @@ public class LSocketTask
 			NioSocketICon connection = socketTask.ioSession.getConnection();
 			connection.setInterestedInWrite(true);
 		}
-
+		
 		waitStart = System.currentTimeMillis();
 		if (wakenUp.getAndSet(false)) selector.wakeup();
 		int selectedCount;
@@ -146,26 +146,27 @@ public class LSocketTask
 		 */
 		if (idleTime < 50 && selectedCount == 0)
 		{
+			selectorXCount++;
 			selectorError++;
 			Thread.yield();
 			if (selectorError > 10)
 			{
-				//#debug warn
-				base.tina.core.log.LogPrinter.w(null, "Selector error:runtime error[ selector invalid ]");
 				selectorX = SelectorProvider.provider().openSelector();
+				//#debug warn
+				base.tina.core.log.LogPrinter.w(null, "Selector error:runtime error[ selector invalid ]" + "old:" + selector + "|new:" + selectorX);
 				for (SelectionKey key : selector.keys())
 				{
-
-					@SuppressWarnings("unchecked")
+					
+					@SuppressWarnings ("unchecked")
 					final IoSession<NioSocketICon> ioSession = (IoSession<NioSocketICon>) key.attachment();
-					if (key.isValid() && key.interestOps() != 0 && ioSession != null)
+					if (key.isValid() && key.interestOps() != 0 && ioSession != null && selectorXCount < 20)
 					{
 						NioSocketICon iCon = ioSession.getConnection();
 						iCon.setSelectorX(this);
-						iCon.register(key.interestOps(), ioSession);
+						iCon.register(SelectionKey.OP_READ, ioSession);//在这个节点上直接执行OP_READ注册即可
+						key.cancel();
 						continue;
 					}
-					key.cancel();
 					if (ioSession != null)
 					{
 						ioSession.setError(new ClosedChannelException());
@@ -180,7 +181,7 @@ public class LSocketTask
 						boolean hasDis = hasDisConnect.get();
 						if (hasDis || hasDisConnect.compareAndSet(false, true)) break;
 					}
-
+					
 				}
 				swap_selector = selectorX;
 				selectorError = 0;
@@ -195,7 +196,7 @@ public class LSocketTask
 			{
 				SelectionKey key = iter.next();
 				iter.remove();
-				@SuppressWarnings("unchecked")
+				@SuppressWarnings ("unchecked")
 				IoSession<NioSocketICon> ioSession = (IoSession<NioSocketICon>) key.attachment();
 				if (ioSession == null)
 				{
@@ -212,7 +213,7 @@ public class LSocketTask
 				}
 			}
 		}
-
+		
 		if (!timeOutTasks.isEmpty())
 		{
 			long curTime = System.currentTimeMillis();
@@ -259,7 +260,7 @@ public class LSocketTask
 			}
 			scheduleService.commitNotify();
 		}
-
+		
 		if (timeOutTasks.isEmpty())
 		{
 			needAlarm = false;
@@ -270,7 +271,7 @@ public class LSocketTask
 			Collections.sort(timeOutTasks, toWaitComparator);
 			delayTime = TimeUnit.SECONDS.toMillis(timeOutTasks.getFirst().timeOut);
 		}
-
+		
 		if (hasDisConnect.get())
 		{
 			Set<SelectionKey> keys = selector.keys();
@@ -302,35 +303,35 @@ public class LSocketTask
 			hasDisConnect.set(false);
 		}
 	}
-
+	
 	public final static LSocketTask open() {
 		if (singleInstance == null) singleInstance = new LSocketTask();
 		return singleInstance;
 	}
-
+	
 	@Override
 	public final void wakeUp() {
 		if (wakenUp.compareAndSet(false, true) && selector != null && selector.isOpen()) selector.wakeup();
 	}
-
+	
 	@Override
 	public final Selector getSelector() {
 		return selectorX;
 	}
-
-	final Comparator<SocketTask>	toWaitComparator	= new Comparator<SocketTask>()
-														{
-
-															@Override
-															public int compare(SocketTask lhs, SocketTask rhs) {
-																if (lhs == null) return 1;
-																if (rhs == null) return -1;
-																long lhsST = lhs.getStartTime();
-																long rhsST = rhs.getStartTime();
-																return lhs.timeOut + lhsST > rhs.timeOut + rhsST ? 1 : lhs.timeOut + lhsST < rhs.timeOut + rhsST ? -1 : 0;
-															}
-														};
-
+	
+	final Comparator<SocketTask> toWaitComparator = new Comparator<SocketTask>()
+	                                              {
+		                                              
+		                                              @Override
+		                                              public int compare(SocketTask lhs, SocketTask rhs) {
+			                                              if (lhs == null) return 1;
+			                                              if (rhs == null) return -1;
+			                                              long lhsST = lhs.getStartTime();
+			                                              long rhsST = rhs.getStartTime();
+			                                              return lhs.timeOut + lhsST > rhs.timeOut + rhsST ? 1 : lhs.timeOut + lhsST < rhs.timeOut + rhsST ? -1 : 0;
+		                                              }
+	                                              };
+	
 	@Override
 	public final void dispose() {
 		for (Iterator<CSocketTask> iter = toRegister.iterator(); iter.hasNext();)
@@ -346,7 +347,7 @@ public class LSocketTask
 			socketTask.setError(getError());
 			commitResult(socketTask);
 			iter.remove();
-
+			
 		}
 		for (Iterator<SocketTask> iter = timeOutTasks.iterator(); iter.hasNext();)
 		{
@@ -371,7 +372,7 @@ public class LSocketTask
 		singleInstance = null;
 		super.dispose();
 	}
-
+	
 	final void toRead(SocketChannel socketChannel, IoSession<NioSocketICon> ioSession) throws Exception {
 		try
 		{
@@ -394,7 +395,7 @@ public class LSocketTask
 					return;
 				}
 				ioSession.readBuffer.flip();
-
+				
 				// Version 0
 				// while (ioSession.readBuffer.hasRemaining())
 				// {
@@ -432,12 +433,12 @@ public class LSocketTask
 				ioSession.readBuffer.clear();
 			}
 			while (actuallyRead > 0);
-
+			
 		}
-		catch (IOException e)
+		catch (Exception e)
 		{
-			//#debug warn
-			e.printStackTrace();
+			//#debug
+			if (!(e instanceof IOException)) base.tina.core.log.LogPrinter.e(null, "查！！查！！", e);
 			ioSession.setError(e);
 			for (;;)
 			{
@@ -445,7 +446,7 @@ public class LSocketTask
 				if (dis || ioSession.disconnect.compareAndSet(false, true))
 				{
 					//#debug info
-					base.tina.core.log.LogPrinter.i(null, "IoSession read Ex disconnect:" + ioSession.url + "@" + ioSession.hashCode(), e);
+					base.tina.core.log.LogPrinter.i(null, "IoSession read Ex disconnect:" + ioSession.url + " " + ioSession.toString());
 					break;
 				}
 			}
@@ -456,7 +457,7 @@ public class LSocketTask
 			}
 		}
 	}
-
+	
 	/**
 	 * @param socketChannel
 	 * @throws Exception
@@ -466,7 +467,7 @@ public class LSocketTask
 		ByteBuffer toWrite = null;
 		int actuallyWrite = 0;
 		long curTime = System.currentTimeMillis();
-
+		
 		NioSocketICon connection = ioSession.getConnection();
 		IoFilter filter = ioSession.getFilterChain();
 		SocketTask socketTask = null;

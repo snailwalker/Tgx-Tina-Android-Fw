@@ -105,10 +105,7 @@ public class RawContactReadTask
 					if (lastRawContatcID >= 0)
 					{
 						RawContactProfile lastProfile = profileMap.get(lastRawContatcID);
-						if (lastProfile != null)
-						{
-							profilePack.addProfile(lastProfile);
-						}
+						if (lastProfile != null) profilePack.addProfile(lastProfile);
 					}
 					lastRawContatcID = rawContactID;
 					if (progress != null) progress.updateProgress(progressType, 1);

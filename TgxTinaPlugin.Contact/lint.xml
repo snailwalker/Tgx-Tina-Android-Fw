@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <issue id="DefaultLocale">
+        <ignore path="base.external.android.plugin/com/tgx/tina/android/plugin/contact/search/SearchPy.java" />
+    </issue>
+</lint>

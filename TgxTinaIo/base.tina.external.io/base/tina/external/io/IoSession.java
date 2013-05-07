@@ -29,11 +29,11 @@ public class IoSession<E extends IConnection>
 		implements
 		ICloseable
 {
-	public final String			url;
 	final int					resource;
 	final static int			BUFFER_SIZE	= 0x10000;
-	public final ByteBuffer		readBuffer;
 	private boolean				receiveData;
+	public final String			url;
+	public final ByteBuffer		readBuffer;
 	public boolean				isTimeOut;
 	public final AtomicBoolean	disconnect	= new AtomicBoolean(true);
 

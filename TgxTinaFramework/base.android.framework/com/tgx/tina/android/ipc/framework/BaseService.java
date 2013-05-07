@@ -32,10 +32,10 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Process;
 import android.os.RemoteException;
-import base.tina.core.task.android.ATaskService;
 import base.tina.core.task.timer.TimerTask;
 
 import com.tgx.tina.android.ipc.framework.RemoteService.Stub;
+import com.tgx.tina.android.task.ATaskService;
 
 public abstract class BaseService
 				extends
@@ -71,6 +71,8 @@ public abstract class BaseService
 
 														@Override
 														public boolean onNoAction(String cActionStr) throws RemoteException {
+															//#debug 
+															base.tina.core.log.LogPrinter.d(null, "onNoAction:" + cActionStr);
 															ActionReceiver receiver = actionReceivers.remove(cActionStr);
 															if (receiver != null) unregisterReceiver(receiver);
 															return false;
@@ -101,6 +103,8 @@ public abstract class BaseService
 
 	@Override
 	public boolean onUnbind(Intent intent) {
+		//#debug
+		base.tina.core.log.LogPrinter.d(null, "onUnbind-.-");
 		return true;
 	}
 
@@ -113,7 +117,7 @@ public abstract class BaseService
 	public void onCreate() {
 		super.onCreate();
 		//#ifdef debug
-		base.tina.external.android.log.AndroidPrinter.createByService(this, false);
+		com.tgx.tina.android.log.AndroidPrinter.createByService(this, false);
 		//#endif 
 		service_update_ui = getPackageName() + DefaultConsts.serviceAction + hashCode();
 		_instance = this;
@@ -146,15 +150,17 @@ public abstract class BaseService
 
 				cmd = bundle.getInt("cmd", -9999);
 				switch (cmd) {
+					case DefaultConsts.SERVERACTION_CLIENT_LOG:
+						break;
+					case DefaultConsts.SERVERACTION_CLIENT_STOP:
+						//#debug verbose
+						base.tina.core.log.LogPrinter.v(null, "BaseService: Client Stop!");
+						break;
 					case DefaultConsts.SERVERACTION_CLIENT_START:
 						//#debug verbose
 						base.tina.core.log.LogPrinter.v(null, "Bridge Start");
 						Bundle serviceStatusBundle = getServiceStatus();
 						service.updateClient(DefaultConsts.BaseService_ServiceStatus, serviceStatusBundle);
-						break;
-					case DefaultConsts.SERVERACTION_CLIENT_STOP:
-						break;
-					case DefaultConsts.SERVERACTION_CLIENT_LOG:
 						break;
 					default:
 						onActionReceive(cmd, bundle);

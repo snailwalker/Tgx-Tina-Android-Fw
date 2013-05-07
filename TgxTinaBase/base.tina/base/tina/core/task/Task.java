@@ -1,19 +1,19 @@
- /*******************************************************************************
-  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
-  *
-  * Licensed under the Apache License, Version 2.0 (the "License");
-  * you may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at
-  *
-  * http://www.apache.org/licenses/LICENSE-2.0
-  *
-  * Unless required by applicable law or agreed to in writing, software
-  * distributed under the License is distributed on an "AS IS" BASIS,
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  *******************************************************************************/
- package base.tina.core.task;
+/*******************************************************************************
+ * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ *******************************************************************************/
+package base.tina.core.task;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -193,6 +193,10 @@ public abstract class Task
 		toScheduled = 0;
 	}
 	
+	public final boolean isInQueue() {
+		return toScheduled != 0;
+	}
+	
 	/**
 	 * @param duration
 	 *            延迟多少时间单位执行
@@ -200,17 +204,19 @@ public abstract class Task
 	 *            时间单位
 	 */
 	protected final void setDelay(long duration, TimeUnit timeUnit) {
-		if (duration > 0)
+		if (duration <= 0) return;
+		if (isInQueue()) //不必判断ScheduleQueue的NULL
 		{
-			if (scheduleService != null)
-			{
-				scheduleService.mainQueue.updateDelay(this, duration, timeUnit);
-			}
-			else
-			// 尚未进入过调度系统
-			{
-				doTime = System.currentTimeMillis() + TimeUnit.MILLISECONDS.convert(duration, timeUnit);
-			}
+			
+			//#debug
+			base.tina.core.log.LogPrinter.d(null, "old offime :" + offTime);
+			offTime = System.currentTimeMillis() + TimeUnit.MILLISECONDS.convert(duration, timeUnit) - doTime;
+			invalid();
+		}
+		else
+		// 尚未进入调度系统
+		{
+			doTime = System.currentTimeMillis() + TimeUnit.MILLISECONDS.convert(duration, timeUnit);
 		}
 	}
 	
@@ -263,6 +269,7 @@ public abstract class Task
 		setError(null);
 		doTime = 0;
 		retry += (retry & 0x0F) < 0x0F ? 1 : 0;
+		invalid = false;
 		isDone = false;
 		isPending = false;
 		isInit = false;
@@ -374,8 +381,13 @@ public abstract class Task
 		disable = true;
 	}
 	
+	/**
+	 * isPending 尽在initTask 接口实现时设置成true invaild()方法不保证一定能将当前任务取消掉
+	 * 方法执行结果依赖于isPending 的读取位置 所以依赖此标示位的操作都需要做到不依赖此标示 能正常完成
+	 * 
+	 **/
 	public final void invalid() {
-		invalid = isPending ? invalid : true;
+		invalid = isInQueue() ? true : invalid;
 	}
 	
 	public final void attach(Object object) {

@@ -1,0 +1,9 @@
+<resources>
+
+    <string name="app_name">TgxTinaConnect</string>
+    <string name="test_service_name">TgxTinaTestConService</string>
+    <string name="action_service_start">tgx.intent.connect.service.action.START</string>
+    <string name="permission_service">tgx.android.permissions.SERVICE</string>
+    <string name="permission_broadcast">tgx.android.permissions.BROADCAST</string>
+
+</resources>
