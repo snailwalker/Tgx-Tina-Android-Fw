@@ -15,7 +15,7 @@ public abstract class BaseApp<T extends BaseBridge>
         IBridge<T>
 {
 	//#ifdef debug
-	LEVEL                lv = LEVEL.VERBOSE;
+	LEVEL                lv = LEVEL.WARN;
 	//#else
 	//$LEVEL lv = LEVEL.WARN;
 	//#endif

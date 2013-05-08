@@ -107,7 +107,7 @@ public abstract class BaseProvider
 		//#debug info
 		android.util.Log.i(LogPrinter.LOG_TAG, "--BaseProvide-- Create");
 		//#ifdef debug
-		LEVEL lv = LEVEL.VERBOSE;
+		LEVEL lv = LEVEL.WARN;
 		//#else
 		//$LEVEL lv = LEVEL.WARN;
 		//#endif

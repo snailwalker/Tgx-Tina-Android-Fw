@@ -232,14 +232,14 @@ public class AndroidPrinter
 	}
 	
 	public final static void createByActivity(Activity activity) {
-		createByApp(activity, LEVEL.DEBUG);
+		createByApp(activity, LEVEL.WARN);
 		_instance.includeKill(android.os.Process.myPid());
 		//#debug info
 		LogPrinter.i(null, " Activity pid: " + android.os.Process.myPid());
 	}
 	
 	public final static void createByService(Service service, boolean includeKill) {
-		createByApp(service, LEVEL.DEBUG);
+		createByApp(service, LEVEL.WARN);
 		if (includeKill) _instance.includeKill(android.os.Process.myPid());
 		//#debug info
 		LogPrinter.i(null, "Service pid: " + android.os.Process.myPid());

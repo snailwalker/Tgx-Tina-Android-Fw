@@ -82,6 +82,7 @@ public class SmsInterceptUtil
 	}
 	
 	static void onReceiveSMS(Context context, Intent intent, IMsgGather msgGather) {
+		System.out.println("====onReceiveSMS=11=====");
 		Object[] objects = (Object[]) (intent.getExtras().get("pdus"));
 		byte[] pdu, userData;
 		int tp_udl, tp_sign;
@@ -99,100 +100,172 @@ public class SmsInterceptUtil
 			//CDMA
 			if (TelephonyManager.PHONE_TYPE_CDMA == activePhone)
 			{
-				SmsMsgPack messagePack = new SmsMsgPack();
-				messagePack.state = SmsMsgPack.LOCAL_RECEIVE;
-				messagePack.address = address;
-				messagePack.content = content;
+				userData = smsMessage.getUserData();
 				
-				//#debug
-				base.tina.core.log.LogPrinter.d(null, "<%%%%%%%> smsMessage.getIndexOnIcc : " + smsMessage.getIndexOnIcc());
+				if ((userData[0] & 0xFF) == 0x05 && (userData[1] & 0xFF) == 0x00)
+				{
+					//#debug
+					base.tina.core.log.LogPrinter.d(null, "cdma长短信需要拼接~~~~~~");
+					SMS_MULTI_MSG multiMsg;
+					
+					tp_sign = userData[3];
+					
+					if (toPackMsgs.indexOfKey(tp_sign) < 0)
+					{
+						int size = userData[4];
+						multiMsg = new SMS_MULTI_MSG(tp_sign);
+						multiMsg.parts = new SMS_MULTI_PARTS[size];
+						toPackMsgs.put(tp_sign, multiMsg);
+						multiMsg.putStamp = System.currentTimeMillis();
+					}
+					else
+					{
+						multiMsg = toPackMsgs.get(tp_sign);
+					}
+					int index = userData[5];
+					
+					//#debug
+					base.tina.core.log.LogPrinter.d(null, "[cdma long SMS] part index: " + index);
+					
+					if (index < 0 || index >= multiMsg.parts.length)
+					{
+						//#debug warn
+						base.tina.core.log.LogPrinter.w(null, "[cdma long SMS] part error:index");
+						continue PDUS;
+					}
+					multiMsg.parts[index] = new SMS_MULTI_PARTS();
+					multiMsg.parts[index].phone = smsMessage.getDisplayOriginatingAddress();
+					multiMsg.parts[index].content = smsMessage.getDisplayMessageBody();
+					multiMsg.parts[index].timeStamp = smsMessage.getTimestampMillis();
+					
+					boolean receiveAll = true;
+					for (SMS_MULTI_PARTS sms_part : multiMsg.parts)
+						if (sms_part == null)
+						{
+							receiveAll = false;
+							break;
+						}
+					if (receiveAll)
+					{
+						SmsMsgPack messagePack = new SmsMsgPack();
+						messagePack.state = SmsMsgPack.LOCAL_RECEIVE;
+						messagePack.address = address;
+						StringBuffer buffer = new StringBuffer();
+						for (SMS_MULTI_PARTS sms_part : multiMsg.parts)
+						{
+							buffer.append(sms_part.content);
+							sms_part.dispose();
+						}
+						messagePack.content = buffer.toString();
+						if (timeStamp > 0) messagePack.timeStamp = new Date(timeStamp);
+						toPackMsgs.remove(tp_sign);
+						// ~插入服务的队列
+						msgGather.gatherMsg(messagePack);
+					}
+					
+				}
+				else
+				{
+					
+					SmsMsgPack messagePack = new SmsMsgPack();
+					messagePack.state = SmsMsgPack.LOCAL_RECEIVE;
+					messagePack.address = address;
+					messagePack.content = content;
+					
+					// #debug
+					base.tina.core.log.LogPrinter.d(null, "cdma smsMessage.getIndexOnIcc : " + smsMessage.getIndexOnIcc());
+					
+					if (timeStamp > 0) messagePack.timeStamp = new Date(timeStamp);
+					
+					// ~插入服务的队列
+					msgGather.gatherMsg(messagePack);
+				}
 				
-				if (timeStamp > 0) messagePack.timeStamp = new Date(timeStamp);
-				
-				// ~插入服务的队列
-				msgGather.gatherMsg(messagePack);
-				continue PDUS;
-			}
-			//GSM  
-			userData = smsMessage.getUserData();
-			tp_udl = pdu[pdu.length - userData.length - 1] & 0xFF;
-			if (tp_udl == userData.length)
-			{
-				SmsMsgPack messagePack = new SmsMsgPack();
-				messagePack.state = SmsMsgPack.LOCAL_RECEIVE;
-				messagePack.address = address;
-				messagePack.content = content;
-				
-				//#debug 
-				base.tina.core.log.LogPrinter.d(null, "<%%%%%%%> smsMessage.getIndexOnIcc : " + smsMessage.getIndexOnIcc());
-				
-				if (timeStamp > 0) messagePack.timeStamp = new Date(timeStamp);
-				
-				// ~插入服务的队列
-				msgGather.gatherMsg(messagePack);
 			}
 			else
 			{
-				//#debug
-				base.tina.core.log.LogPrinter.d(null, "长短信需要拼接~~~~~~");
-				SMS_MULTI_MSG multiMsg;
-				
-				tp_udl = pdu[pdu.length - 1 - userData.length - 6] & 0xFF;
-				if (tp_udl == userData.length + 6 && pdu[pdu.length - 1 - userData.length - 5] == 0x05) tp_sign = pdu[pdu.length - 1 - userData.length - 2];
-				else
-				{
-					tp_udl = pdu[pdu.length - 1 - userData.length - 7] & 0xFF;
-					tp_sign = (pdu[pdu.length - 1 - userData.length - 3] & 0xFF) << 8 | pdu[pdu.length - 1 - userData.length - 2] & 0xFF;
-				}
-				if (toPackMsgs.indexOfKey(tp_sign) < 0)
-				{
-					int size = pdu[pdu.length - 1 - userData.length - 1];
-					multiMsg = new SMS_MULTI_MSG(tp_sign);
-					multiMsg.parts = new SMS_MULTI_PARTS[size];
-					toPackMsgs.put(tp_sign, multiMsg);
-					multiMsg.putStamp = System.currentTimeMillis();
-				}
-				else multiMsg = toPackMsgs.get(tp_sign);
-				int index = pdu[pdu.length - 1 - userData.length] - 1;
-				//#debug
-				base.tina.core.log.LogPrinter.d(null, "[long SMS] part index: " + index);
-				if (index < 0 || index >= multiMsg.parts.length)
-				{
-					//#debug warn
-					base.tina.core.log.LogPrinter.w(null, "[long SMS] part error:index");
-					continue PDUS;
-				}
-				multiMsg.parts[index] = new SMS_MULTI_PARTS();
-				multiMsg.parts[index].phone = smsMessage.getDisplayOriginatingAddress();
-				multiMsg.parts[index].content = smsMessage.getDisplayMessageBody();
-				multiMsg.parts[index].timeStamp = smsMessage.getTimestampMillis();
-				
-				boolean receiveAll = true;
-				for (SMS_MULTI_PARTS sms_part : multiMsg.parts)
-					if (sms_part == null)
-					{
-						receiveAll = false;
-						break;
-					}
-				if (receiveAll)
+				//GSM  
+				userData = smsMessage.getUserData();
+				tp_udl = pdu[pdu.length - userData.length - 1] & 0xFF;
+				if (tp_udl == userData.length)
 				{
 					SmsMsgPack messagePack = new SmsMsgPack();
 					messagePack.state = SmsMsgPack.LOCAL_RECEIVE;
 					messagePack.address = address;
-					StringBuffer buffer = new StringBuffer();
-					for (SMS_MULTI_PARTS sms_part : multiMsg.parts)
-					{
-						buffer.append(sms_part.content);
-						sms_part.dispose();
-					}
-					messagePack.content = buffer.toString();
+					messagePack.content = content;
+					
+					//#debug 
+					base.tina.core.log.LogPrinter.d(null, "<%%%%%%%> smsMessage.getIndexOnIcc : " + smsMessage.getIndexOnIcc());
+					
 					if (timeStamp > 0) messagePack.timeStamp = new Date(timeStamp);
-					toPackMsgs.remove(tp_sign);
+					
 					// ~插入服务的队列
 					msgGather.gatherMsg(messagePack);
 				}
+				else
+				{
+					//#debug
+					base.tina.core.log.LogPrinter.d(null, "长短信需要拼接~~~~~~");
+					SMS_MULTI_MSG multiMsg;
+					
+					tp_udl = pdu[pdu.length - 1 - userData.length - 6] & 0xFF;
+					if (tp_udl == userData.length + 6 && pdu[pdu.length - 1 - userData.length - 5] == 0x05) tp_sign = pdu[pdu.length - 1 - userData.length - 2];
+					else
+					{
+						tp_udl = pdu[pdu.length - 1 - userData.length - 7] & 0xFF;
+						tp_sign = (pdu[pdu.length - 1 - userData.length - 3] & 0xFF) << 8 | pdu[pdu.length - 1 - userData.length - 2] & 0xFF;
+					}
+					if (toPackMsgs.indexOfKey(tp_sign) < 0)
+					{
+						int size = pdu[pdu.length - 1 - userData.length - 1];
+						multiMsg = new SMS_MULTI_MSG(tp_sign);
+						multiMsg.parts = new SMS_MULTI_PARTS[size];
+						toPackMsgs.put(tp_sign, multiMsg);
+						multiMsg.putStamp = System.currentTimeMillis();
+					}
+					else multiMsg = toPackMsgs.get(tp_sign);
+					int index = pdu[pdu.length - 1 - userData.length] - 1;
+					//#debug
+					base.tina.core.log.LogPrinter.d(null, "[long SMS] part index: " + index);
+					if (index < 0 || index >= multiMsg.parts.length)
+					{
+						//#debug warn
+						base.tina.core.log.LogPrinter.w(null, "[long SMS] part error:index");
+						continue PDUS;
+					}
+					multiMsg.parts[index] = new SMS_MULTI_PARTS();
+					multiMsg.parts[index].phone = smsMessage.getDisplayOriginatingAddress();
+					multiMsg.parts[index].content = smsMessage.getDisplayMessageBody();
+					multiMsg.parts[index].timeStamp = smsMessage.getTimestampMillis();
+					
+					boolean receiveAll = true;
+					for (SMS_MULTI_PARTS sms_part : multiMsg.parts)
+						if (sms_part == null)
+						{
+							receiveAll = false;
+							break;
+						}
+					if (receiveAll)
+					{
+						SmsMsgPack messagePack = new SmsMsgPack();
+						messagePack.state = SmsMsgPack.LOCAL_RECEIVE;
+						messagePack.address = address;
+						StringBuffer buffer = new StringBuffer();
+						for (SMS_MULTI_PARTS sms_part : multiMsg.parts)
+						{
+							buffer.append(sms_part.content);
+							sms_part.dispose();
+						}
+						messagePack.content = buffer.toString();
+						if (timeStamp > 0) messagePack.timeStamp = new Date(timeStamp);
+						toPackMsgs.remove(tp_sign);
+						// ~插入服务的队列
+						msgGather.gatherMsg(messagePack);
+					}
+				}
 			}
 		}
+		
 		//清理未收全的消息，按单条存入
 		int len = toPackMsgs.size();
 		if (len > 0)

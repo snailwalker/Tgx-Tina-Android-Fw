@@ -79,7 +79,7 @@ public class LSocketTask
 	final AtomicBoolean hasDisConnect = new AtomicBoolean(false);
 	volatile long       delayTime, waitStart, idleTime;
 	final AtomicBoolean wakenUp       = new AtomicBoolean(false);
-	private int         selectorError, selectorXCount;
+	private int         selectorError;
 	
 	final void offerWrite(SocketTask socketTask) {
 		if (todoTasks.offer(socketTask) && socketTask.ioSession != null) socketTask.ioSession.offerWrite();
@@ -94,9 +94,15 @@ public class LSocketTask
 		if (selector == null) selectorX = selector = SelectorProvider.provider().openSelector();
 		else if (swap_selector != null)
 		{
-			if (selector.isOpen()) selector.close();
+			if (selector.isOpen())
+			{
+				selector.selectNow();
+				selector.close();
+			}
 			selector = swap_selector;
 			swap_selector = null;
+			//#debug
+			base.tina.core.log.LogPrinter.d(null, "swap selector");
 		}
 		CSocketTask cSocketTask;
 		do
@@ -146,45 +152,46 @@ public class LSocketTask
 		 */
 		if (idleTime < 50 && selectedCount == 0)
 		{
-			selectorXCount++;
 			selectorError++;
 			Thread.yield();
 			if (selectorError > 10)
 			{
 				selectorX = SelectorProvider.provider().openSelector();
 				//#debug warn
-				base.tina.core.log.LogPrinter.w(null, "Selector error:runtime error[ selector invalid ]" + "old:" + selector + "|new:" + selectorX);
+				base.tina.core.log.LogPrinter.w(null, "Selector error:runtime error[ selector invalid ]" + "old: " + selector + "|new: " + selectorX);
 				for (SelectionKey key : selector.keys())
 				{
+					if (!key.isValid() || key.interestOps() == 0) continue;
 					
 					@SuppressWarnings ("unchecked")
 					final IoSession<NioSocketICon> ioSession = (IoSession<NioSocketICon>) key.attachment();
-					if (key.isValid() && key.interestOps() != 0 && ioSession != null && selectorXCount < 20)
+					if (ioSession != null)
 					{
 						NioSocketICon iCon = ioSession.getConnection();
 						iCon.setSelectorX(this);
 						iCon.register(SelectionKey.OP_READ, ioSession);//在这个节点上直接执行OP_READ注册即可
-						key.cancel();
-						continue;
 					}
-					if (ioSession != null)
-					{
-						ioSession.setError(new ClosedChannelException());
-						for (;;)
-						{
-							boolean dis = ioSession.disconnect.get();
-							if (dis || ioSession.disconnect.compareAndSet(false, true)) break;
-						}
-					}
-					for (;;)
-					{
-						boolean hasDis = hasDisConnect.get();
-						if (hasDis || hasDisConnect.compareAndSet(false, true)) break;
-					}
+					key.cancel();
+					//					continue;
+					//					if (ioSession != null)
+					//					{
+					//						ioSession.setError(new ClosedChannelException());
+					//						for (;;)
+					//						{
+					//							boolean dis = ioSession.disconnect.get();
+					//							if (dis || ioSession.disconnect.compareAndSet(false, true)) break;
+					//						}
+					//					}
+					//					for (;;)
+					//					{
+					//						boolean hasDis = hasDisConnect.get();
+					//						if (hasDis || hasDisConnect.compareAndSet(false, true)) break;
+					//					}
 					
 				}
 				swap_selector = selectorX;
 				selectorError = 0;
+				return;
 			}
 		}
 		else selectorError = 0;

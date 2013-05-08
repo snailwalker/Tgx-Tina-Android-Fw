@@ -58,7 +58,7 @@ public abstract class ConnectionService
 				if (lastNetType != nowNetType)
 				{
 					//#debug
-					base.tina.core.log.LogPrinter.d(TAG, "change network type: from" + lastNetType + " to " + nowNetType);
+					base.tina.core.log.LogPrinter.d(TAG, "change network type: from " + lastNetType + " to " + nowNetType);
 					networkChType = true;
 				}
 				else
@@ -95,6 +95,18 @@ public abstract class ConnectionService
 							}
 							break;
 						case ConnectivityManager.TYPE_MOBILE:
+							switch (nowNetState) {
+								case CONNECTED:
+									if (!lastNetState.equals(nowNetState))
+									{
+										//#debug
+										base.tina.core.log.LogPrinter.d(TAG, "mobile network is connected!");
+										networkChType = true;
+									}
+									break;
+								default:
+									break;
+							}
 							break;
 						default:
 							break;
