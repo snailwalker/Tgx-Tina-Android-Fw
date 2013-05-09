@@ -111,7 +111,6 @@ public abstract class ConnectionService
 						default:
 							break;
 					}
-					
 				}
 				lastNetState = nowNetState;
 			}

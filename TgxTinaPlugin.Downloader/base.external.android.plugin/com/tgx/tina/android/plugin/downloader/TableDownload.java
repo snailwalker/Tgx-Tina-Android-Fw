@@ -1,17 +1,17 @@
 /*******************************************************************************
  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  *******************************************************************************/
 package com.tgx.tina.android.plugin.downloader;
 
@@ -31,18 +31,18 @@ import android.net.Uri;
 import android.os.Binder;
 import android.os.Process;
 
-public class TableDownload
-				extends
-				BaseTable
-{
 
-	public TableDownload(BaseProviderConfig config)
-	{
+public class TableDownload
+        extends
+        BaseTable
+{
+	
+	public TableDownload(BaseProviderConfig config) {
 		super(config);
 		table_name = "downloads";
 		paths = new String[] {
-						"download" ,
-						"download/#"
+		        "download",
+		        "download/#"
 		};
 		//set readableColumns
 		mReadableColumnsSet.add(GlobalDownload._ID);
@@ -61,7 +61,7 @@ public class TableDownload
 		mReadableColumnsSet.add(GlobalDownload.COLUMN_TITLE);
 		mReadableColumnsSet.add(GlobalDownload.COLUMN_DESCRIPTION);
 	}
-
+	
 	@Override
 	public boolean createTable(SQLiteDatabase db, Context context) {
 		try
@@ -109,7 +109,7 @@ public class TableDownload
 		}
 		return true;
 	}
-
+	
 	@Override
 	public boolean dropTable(SQLiteDatabase db, Context context) {
 		try
@@ -123,7 +123,7 @@ public class TableDownload
 		}
 		return true;
 	}
-
+	
 	@Override
 	public int delete(SQLiteDatabase db, Context context, int pathIndex, Uri uri, String selection, String[] selectionArgs) {
 		Utils.validateSelection(selection, mReadableColumnsSet);
@@ -160,11 +160,11 @@ public class TableDownload
 		context.getContentResolver().notifyChange(uri, null);
 		return count;
 	}
-
+	
 	@Override
 	public Uri insert(SQLiteDatabase db, Context context, int pathIndex, Uri uri, ContentValues values) {
 		ContentValues filteredValues = new ContentValues();
-
+		
 		Utils.copyString(GlobalDownload.COLUMN_URI, values, filteredValues);
 		Utils.copyString(GlobalDownload.COLUMN_APP_DATA, values, filteredValues);
 		Utils.copyBoolean(GlobalDownload.COLUMN_NO_INTEGRITY, values, filteredValues);
@@ -228,7 +228,7 @@ public class TableDownload
 		}
 		Utils.copyString(GlobalDownload.COLUMN_TITLE, values, filteredValues);
 		Utils.copyString(GlobalDownload.COLUMN_DESCRIPTION, values, filteredValues);
-
+		
 		//#ifdef debug
 		//#if debug<1
 		base.tina.core.log.LogPrinter.v(Constants.TAG, "initiating download with UID " + filteredValues.getAsInteger(Constants.UID));
@@ -238,17 +238,17 @@ public class TableDownload
 		}
 		//#endif
 		//#endif
-
+		
 		context.startService(new Intent(context, DownloadService.class));
-
+		
 		long rowID = db.insert(table_name, null, filteredValues);
-
+		
 		Uri ret = null;
-
+		
 		if (rowID != -1)
 		{
 			context.startService(new Intent(context, DownloadService.class));
-
+			
 			ret = Uri.parse(GlobalDownload.CONTENT_URI + "/" + rowID);
 			//#debug
 			base.tina.core.log.LogPrinter.d(Constants.TAG, "ret:" + ret);
@@ -259,17 +259,16 @@ public class TableDownload
 			//#debug
 			base.tina.core.log.LogPrinter.d(Constants.TAG, "couldn't insert into downloads database");
 		}
-
+		
 		return ret;
 	}
-
+	
 	@Override
-	public Cursor query(SQLiteDatabase db, Context context, int pathIndex, Uri uri, String[] projection, String selection, String[] selectionArgs,
-					String sortOrder) {
+	public Cursor query(SQLiteDatabase db, Context context, int pathIndex, Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
 		Utils.validateSelection(selection, mReadableColumnsSet);
-
+		
 		SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
-
+		
 		switch (pathIndex) {
 			case 0: {
 				qb.setTables(table_name);
@@ -282,14 +281,14 @@ public class TableDownload
 				break;
 			}
 		}
-
+		
 		Cursor ret = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
-
+		
 		if (ret != null)
 		{
 			ret = new Utils.ReadOnlyCursorWrapper(ret);
 		}
-
+		
 		if (ret != null)
 		{
 			ret.setNotificationUri(context.getContentResolver(), uri);
@@ -303,15 +302,15 @@ public class TableDownload
 		}
 		return ret;
 	}
-
+	
 	@Override
 	public int update(SQLiteDatabase db, Context context, int pathIndex, Uri uri, ContentValues values, String selection, String[] selectionArgs) {
 		Utils.validateSelection(selection, mReadableColumnsSet);
-
+		
 		int count;
 		long rowId = 0;
 		boolean startService = false;
-
+		
 		ContentValues filteredValues;
 		if (Binder.getCallingPid() != Process.myPid())
 		{
@@ -380,7 +379,7 @@ public class TableDownload
 		}
 		return count;
 	}
-
+	
 	@Override
 	public String getType(int pathIndex) {
 		switch (pathIndex) {
@@ -392,20 +391,20 @@ public class TableDownload
 				return null;
 		}
 	}
-
+	
 	@Override
 	public boolean addIndex(SQLiteDatabase db, Context context) {
 		return true;
 	}
-
+	
 	@Override
 	public boolean addTrigger(SQLiteDatabase db, Context context) {
 		return true;
 	}
-
+	
 	@Override
 	public boolean addData(SQLiteDatabase db, Context context) {
 		return true;
 	}
-
+	
 }

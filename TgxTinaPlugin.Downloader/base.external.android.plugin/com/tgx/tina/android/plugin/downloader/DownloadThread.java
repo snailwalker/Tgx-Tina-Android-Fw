@@ -1,17 +1,17 @@
 /*******************************************************************************
  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  *******************************************************************************/
 package com.tgx.tina.android.plugin.downloader;
 
@@ -48,23 +48,23 @@ import android.net.Uri;
 import android.os.PowerManager;
 import android.os.Process;
 
+
 /**
  * Runs an actual download
  */
 public class DownloadThread
-				extends
-				Thread
+        extends
+        Thread
 {
-
-	private Context			mContext;
-	private DownloadInfo	mInfo;
-
-	public DownloadThread(Context context, DownloadInfo info)
-	{
+	
+	private Context      mContext;
+	private DownloadInfo mInfo;
+	
+	public DownloadThread(Context context, DownloadInfo info) {
 		mContext = context;
 		mInfo = info;
 	}
-
+	
 	/**
 	 * Returns the user agent provided by the initiating app, or use the default
 	 * one
@@ -80,13 +80,13 @@ public class DownloadThread
 		}
 		return userAgent;
 	}
-
+	
 	/**
 	 * Executes the download in a separate thread
 	 */
 	public void run() {
 		Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-
+		
 		int finalStatus = GlobalDownload.STATUS_UNKNOWN_ERROR;
 		boolean countRetry = false;
 		int retryAfter = 0;
@@ -99,7 +99,7 @@ public class DownloadThread
 		DefaultHttpClient client = null;
 		PowerManager.WakeLock wakeLock = null;
 		Uri contentUri = Uri.parse(GlobalDownload.CONTENT_URI + "/" + mInfo.mId);
-
+		
 		try
 		{
 			boolean continuingDownload = false;
@@ -109,15 +109,15 @@ public class DownloadThread
 			String headerContentLocation = null;
 			String headerETag = null;
 			String headerTransferEncoding = null;
-
+			
 			byte data[] = new byte[Constants.BUFFER_SIZE];
-
+			
 			int bytesSoFar = 0;
-
+			
 			PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
 			wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, Constants.TAG);
 			wakeLock.acquire();
-
+			
 			filename = mInfo.mFileName;
 			if (filename != null)
 			{
@@ -162,12 +162,12 @@ public class DownloadThread
 					}
 				}
 			}
-
+			
 			int bytesNotified = bytesSoFar;
 			// starting with MIN_VALUE means that the first write will commit
 			//     progress to the database
 			long timeLastNotification = 0;
-
+			
 			client = newHttpClient(userAgent());
 			/*
 			 * This loop is run once for every individual HTTP request that gets
@@ -180,10 +180,10 @@ public class DownloadThread
 			{
 				// Prepares the request and fires it.
 				HttpGet request = new HttpGet(mInfo.mUri);
-
+				
 				//#debug verbose
 				base.tina.core.log.LogPrinter.v(Constants.TAG, "initiating download for " + mInfo.mUri);
-
+				
 				if (mInfo.mCookies != null)
 				{
 					request.addHeader("Cookie", mInfo.mCookies);
@@ -200,7 +200,7 @@ public class DownloadThread
 					}
 					request.addHeader("Range", "bytes=" + bytesSoFar + "-");
 				}
-
+				
 				HttpResponse response;
 				try
 				{
@@ -228,7 +228,7 @@ public class DownloadThread
 					}
 					//#endif
 					//#endif
-
+					
 					if (!Helpers.isNetworkAvailable(mContext))
 					{
 						finalStatus = GlobalDownload.STATUS_RUNNING_PAUSED;
@@ -247,7 +247,7 @@ public class DownloadThread
 					request.abort();
 					break http_request_loop;
 				}
-
+				
 				int statusCode = response.getStatusLine().getStatusCode();
 				if (statusCode == 503 && mInfo.mNumFailed < Constants.MAX_RETRIES)
 				{
@@ -352,7 +352,7 @@ public class DownloadThread
 					// Handles the response, saves the file
 					//#debug verbose
 					base.tina.core.log.LogPrinter.v(Constants.TAG, "received response for " + mInfo.mUri);
-
+					
 					if (!continuingDownload)
 					{
 						Header header = response.getFirstHeader("Accept-Ranges");
@@ -413,7 +413,7 @@ public class DownloadThread
 						base.tina.core.log.LogPrinter.v(Constants.TAG, "Transfer-Encoding: " + headerTransferEncoding);
 						//#endif
 						//#endif
-
+						
 						if (!mInfo.mNoIntegrity && headerContentLength == null && (headerTransferEncoding == null || !headerTransferEncoding.equalsIgnoreCase("chunked")))
 						{
 							//#debug
@@ -422,9 +422,8 @@ public class DownloadThread
 							request.abort();
 							break http_request_loop;
 						}
-
-						DownloadFileInfo fileInfo = Helpers.generateSaveFile(mContext, mInfo.mUri, mInfo.mHint, headerContentDisposition, headerContentLocation, mimeType, mInfo.mDestination,
-										(headerContentLength != null) ? Integer.parseInt(headerContentLength) : 0);
+						
+						DownloadFileInfo fileInfo = Helpers.generateSaveFile(mContext, mInfo.mUri, mInfo.mHint, headerContentDisposition, headerContentLocation, mimeType, mInfo.mDestination, (headerContentLength != null) ? Integer.parseInt(headerContentLength) : 0);
 						if (fileInfo.mFileName == null)
 						{
 							finalStatus = fileInfo.mStatus;
@@ -435,7 +434,7 @@ public class DownloadThread
 						stream = fileInfo.mStream;
 						//#debug verbose
 						base.tina.core.log.LogPrinter.v(Constants.TAG, "writing " + mInfo.mUri + " to " + filename);
-
+						
 						ContentValues values = new ContentValues();
 						values.put(GlobalDownload._DATA, filename);
 						if (headerETag != null)
@@ -454,7 +453,7 @@ public class DownloadThread
 						values.put(GlobalDownload.COLUMN_TOTAL_BYTES, contentLength);
 						mContext.getContentResolver().update(contentUri, values, null, null);
 					}
-
+					
 					InputStream entityStream;
 					try
 					{
@@ -513,7 +512,7 @@ public class DownloadThread
 							}
 							//#endif
 							//#endif
-
+							
 							ContentValues values = new ContentValues();
 							values.put(GlobalDownload.COLUMN_CURRENT_BYTES, bytesSoFar);
 							mContext.getContentResolver().update(contentUri, values, null, null);
@@ -556,7 +555,7 @@ public class DownloadThread
 								{
 									//#debug
 									base.tina.core.log.LogPrinter.d(Constants.TAG, "mismatched content length for " + mInfo.mId);
-
+									
 									finalStatus = GlobalDownload.STATUS_LENGTH_REQUIRED;
 								}
 								else if (!Helpers.isNetworkAvailable(mContext))
@@ -572,7 +571,7 @@ public class DownloadThread
 								{
 									//#debug
 									base.tina.core.log.LogPrinter.d(Constants.TAG, "closed socket for download " + mInfo.mId);
-
+									
 									finalStatus = GlobalDownload.STATUS_HTTP_DATA_ERROR;
 								}
 								break http_request_loop;
@@ -607,17 +606,17 @@ public class DownloadThread
 							bytesNotified = bytesSoFar;
 							timeLastNotification = now;
 						}
-
+						
 						//#debug verbose
 						base.tina.core.log.LogPrinter.v(Constants.TAG, "downloaded " + bytesSoFar + " for " + mInfo.mUri);
-
+						
 						synchronized (mInfo)
 						{
 							if (mInfo.mControl == GlobalDownload.CONTROL_PAUSED)
 							{
 								//#debug verbose
 								base.tina.core.log.LogPrinter.v(Constants.TAG, "paused " + mInfo.mUri);
-
+								
 								finalStatus = GlobalDownload.STATUS_RUNNING_PAUSED;
 								request.abort();
 								break http_request_loop;
@@ -627,14 +626,14 @@ public class DownloadThread
 						{
 							//#debug
 							base.tina.core.log.LogPrinter.d(Constants.TAG, "canceled id " + mInfo.mId);
-
+							
 							finalStatus = GlobalDownload.STATUS_CANCELED;
 							break http_request_loop;
 						}
 					}
 					//#debug verbose
 					base.tina.core.log.LogPrinter.v(Constants.TAG, "download completed for " + mInfo.mUri);
-
+					
 					finalStatus = GlobalDownload.STATUS_SUCCESS;
 				}
 				break;
@@ -644,7 +643,7 @@ public class DownloadThread
 		{
 			//#debug
 			base.tina.core.log.LogPrinter.d(Constants.TAG, "FileNotFoundException for " + filename + " : " + ex);
-
+			
 			finalStatus = GlobalDownload.STATUS_FILE_ERROR;
 			// falls through to the code that reports an error
 		}
@@ -653,7 +652,7 @@ public class DownloadThread
 			//sometimes the socket code throws unchecked exceptions
 			//#debug
 			base.tina.core.log.LogPrinter.d(Constants.TAG, "Exception for id " + mInfo.mId, ex);
-
+			
 			finalStatus = GlobalDownload.STATUS_UNKNOWN_ERROR;
 			// falls through to the code that reports an error
 		}
@@ -682,7 +681,7 @@ public class DownloadThread
 			{
 				//#debug verbose
 				base.tina.core.log.LogPrinter.v(Constants.TAG, "exception when closing the file after download : " + ex);
-
+				
 				// nothing can really be done if the file can't be closed
 			}
 			if (filename != null)
@@ -697,7 +696,7 @@ public class DownloadThread
 				{
 					// make sure the file is readable
 					//                    FileUtils.setPermissions(filename, 0644, -1, -1);//这个是本地方法实现的，先去掉
-
+					
 					// Sync to storage after completion
 					try
 					{
@@ -728,7 +727,7 @@ public class DownloadThread
 			notifyDownloadCompleted(finalStatus, countRetry, retryAfter, redirectCount, gotData, filename, newUri, mimeType);
 		}
 	}
-
+	
 	/**
 	 * Stores information about the completed download, and notifies the
 	 * initiating application.
@@ -740,7 +739,7 @@ public class DownloadThread
 			notifyThroughIntent();
 		}
 	}
-
+	
 	private void notifyThroughDatabase(int status, boolean countRetry, int retryAfter, int redirectCount, boolean gotData, String filename, String uri, String mimeType) {
 		ContentValues values = new ContentValues();
 		values.put(GlobalDownload.COLUMN_STATUS, status);
@@ -764,10 +763,10 @@ public class DownloadThread
 		{
 			values.put(Constants.FAILED_CONNECTIONS, mInfo.mNumFailed + 1);
 		}
-
+		
 		mContext.getContentResolver().update(ContentUris.withAppendedId(GlobalDownload.CONTENT_URI, mInfo.mId), values, null, null);
 	}
-
+	
 	/**
 	 * Notifies the initiating app if it requested it. That way, it can know
 	 * that the download completed even if it's not actively watching the
@@ -777,33 +776,33 @@ public class DownloadThread
 		Uri uri = Uri.parse(GlobalDownload.CONTENT_URI + "/" + mInfo.mId);
 		mInfo.sendIntentIfRequested(uri, mContext);
 	}
-
+	
 	private DefaultHttpClient newHttpClient(String userAgent) {
 		HttpParams params = new BasicHttpParams();
-
+		
 		// Turn off stale checking.  Our connections break all the time anyway,
 		// and it's not worth it to pay the penalty of checking every time.
 		HttpConnectionParams.setStaleCheckingEnabled(params, false);
-
+		
 		// Default connection and socket timeout of 20 seconds.  Tweak to taste.
 		HttpConnectionParams.setConnectionTimeout(params, 20 * 1000);
 		HttpConnectionParams.setSoTimeout(params, 20 * 1000);
 		HttpConnectionParams.setSocketBufferSize(params, 8192);
-
+		
 		// Don't handle redirects -- return them to the caller.  Our code
 		// often wants to re-POST after a redirect, which we must do ourselves.
 		HttpClientParams.setRedirecting(params, false);
-
+		
 		// Set the specified user agent and register standard protocols.
 		HttpProtocolParams.setUserAgent(params, userAgent);
 		SchemeRegistry schemeRegistry = new SchemeRegistry();
 		schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
 		schemeRegistry.register(new Scheme("https", SSLSocketFactory.getSocketFactory(), 443));
 		ClientConnectionManager conman = new ThreadSafeClientConnManager(params, schemeRegistry);
-
+		
 		return new DefaultHttpClient(conman, params);
 	}
-
+	
 	/**
 	 * Clean up a mimeType string so it can be used to dispatch an intent to
 	 * view a downloaded asset.
@@ -818,7 +817,7 @@ public class DownloadThread
 		try
 		{
 			mimeType = mimeType.trim().toLowerCase(Locale.ENGLISH);
-
+			
 			final int semicolonIndex = mimeType.indexOf(';');
 			if (semicolonIndex != -1)
 			{

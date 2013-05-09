@@ -1,17 +1,17 @@
 /*******************************************************************************
  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  *******************************************************************************/
 package com.tgx.tina.android.plugin.massage.sms;
 
@@ -25,47 +25,47 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.telephony.SmsManager;
 
-public class SendSmsHandler
-				extends
-				Handler
-{
-	Context	context;
 
-	public SendSmsHandler(Context context)
-	{
+public class SendSmsHandler
+        extends
+        Handler
+{
+	Context context;
+	
+	public SendSmsHandler(Context context) {
 		this.context = context;
 	}
-
-	public final static String			SMS_SENT_ACTION		= "TaskService.SmsTask.SENT.IntentAction";
-	public final static String			SMS_DELIVERY_ACTION	= "TaskService.SmsTask.DELIVERY.IntentAction";
-	private final static String			MSG_ID				= "msgID";
-	private final static String			MSG_PARTS			= "msgParts";
-	private final static String			MSG_PART_INDEX		= "msgPartIndex";
-
-	private int							msgID;
-	private int							port;
-	private int							multiPartCount;
-	private String						address;
-	private String						content;
-	private byte[]						contentPDU;
-	private ArrayList<String>			contents;
-	private ArrayList<byte[]>			contentPDUs;
-	private ArrayList<PendingIntent>	sentIntents;
-	private ArrayList<PendingIntent>	deliveryIntents;
-	private PendingIntent				sentIntent;
-	private PendingIntent				deliveryIntent;
-
+	
+	public final static String       SMS_SENT_ACTION     = "TaskService.SmsTask.SENT.IntentAction";
+	public final static String       SMS_DELIVERY_ACTION = "TaskService.SmsTask.DELIVERY.IntentAction";
+	private final static String      MSG_ID              = "msgID";
+	private final static String      MSG_PARTS           = "msgParts";
+	private final static String      MSG_PART_INDEX      = "msgPartIndex";
+	
+	private int                      msgID;
+	private int                      port;
+	private int                      multiPartCount;
+	private String                   address;
+	private String                   content;
+	private byte[]                   contentPDU;
+	private ArrayList<String>        contents;
+	private ArrayList<byte[]>        contentPDUs;
+	private ArrayList<PendingIntent> sentIntents;
+	private ArrayList<PendingIntent> deliveryIntents;
+	private PendingIntent            sentIntent;
+	private PendingIntent            deliveryIntent;
+	
 	@Override
 	public void handleMessage(android.os.Message msg) {
 		//#debug info
 		base.tina.core.log.LogPrinter.i(null, "使用handler发短信");
-
+		
 		Bundle bundle = msg.getData();
 		address = bundle.getString("address");
 		content = bundle.getString("content");
 		msgID = bundle.getInt("msgID");
 		port = bundle.getInt("port");
-
+		
 		SmsManager smsManager = SmsManager.getDefault();
 		//from init():
 		{
@@ -121,7 +121,7 @@ public class SendSmsHandler
 				}
 			}
 		}
-
+		
 		//from run():
 		{
 			if (multiPartCount > 1)
@@ -135,7 +135,7 @@ public class SendSmsHandler
 				if (port > 0) smsManager.sendDataMessage(address, null, (short) port, contentPDU, sentIntent, deliveryIntent);
 				else smsManager.sendTextMessage(address, null, content, sentIntent, deliveryIntent);
 			}
-
+			
 			//#debug info
 			base.tina.core.log.LogPrinter.i(null, "~短信任务执行完毕~ 移交系统调度");
 			//#debug 

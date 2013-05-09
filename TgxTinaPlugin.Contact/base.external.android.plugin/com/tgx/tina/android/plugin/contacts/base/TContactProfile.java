@@ -1,54 +1,54 @@
 /*******************************************************************************
  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  *******************************************************************************/
 package com.tgx.tina.android.plugin.contacts.base;
 
 public class TContactProfile
-				extends
-				Profile
+        extends
+        Profile
 {
-	public final static int	SerialNum	= TContactProfileSN;
-
+	public final static int SerialNum = TContactProfileSN;
+	
 	@Override
 	public int getSerialNum() {
 		return SerialNum;
 	}
-
+	
 	@Override
 	public final int getContactID() {
 		return foreignKey;
 	}
-
+	
 	@Override
 	public final int getRawContactID() {
 		return primaryKey;
 	}
-
+	
 	public void setRawContactID(int rawContactID) {
 		primaryKey = rawContactID;
 	}
-
+	
 	public void setContactID(int contactID) {
 		foreignKey = contactID;
 	}
-
-	public String	displayName;		//contact display-name
-	public String	phones[][];		//[count][4] | [i][0]:phoneNum 		| [i][1]:phone mime type 			| [i][2]: custom type label    | [i][3]:phone callerloc
-	public int		photo_id;
-	public int		local_raw_version;
-
+	
+	public String displayName;      //contact display-name
+	public String phones[][];       //[count][4] | [i][0]:phoneNum 		| [i][1]:phone mime type 			| [i][2]: custom type label    | [i][3]:phone callerloc
+	public int    photo_id;
+	public int    local_raw_version;
+	
 	@Override
 	public Profile clone() {
 		TContactProfile tContactProfile = new TContactProfile();
@@ -64,10 +64,10 @@ public class TContactProfile
 				i++;
 			}
 		}
-
+		
 		return tContactProfile;
 	}
-
+	
 	public void addPhone(String phone, int type, String label) {
 		if (phones == null) phones = new String[1][4];
 		if (!addTel(phone, type, label))
@@ -78,7 +78,7 @@ public class TContactProfile
 			addTel(phone, type, label);
 		}
 	}
-
+	
 	final boolean addTel(String phone, int type, String label) {
 		for (String[] tmp : phones)
 		{
@@ -92,7 +92,7 @@ public class TContactProfile
 		}
 		return false;
 	}
-
+	
 	@Override
 	public void dispose() {
 		displayName = null;
@@ -108,10 +108,10 @@ public class TContactProfile
 		phones = null;
 		super.dispose();
 	}
-
-	public final static int	CONTENT_INDEX		= 0;
-	public final static int	MIMETYPE_INDEX		= CONTENT_INDEX + 1;
-	public final static int	TYPE_LABEL			= MIMETYPE_INDEX + 1;
-	public final static int	SUB_CONTENT_INDEX	= MIMETYPE_INDEX + 1;
-
+	
+	public final static int CONTENT_INDEX     = 0;
+	public final static int MIMETYPE_INDEX    = CONTENT_INDEX + 1;
+	public final static int TYPE_LABEL        = MIMETYPE_INDEX + 1;
+	public final static int SUB_CONTENT_INDEX = MIMETYPE_INDEX + 1;
+	
 }

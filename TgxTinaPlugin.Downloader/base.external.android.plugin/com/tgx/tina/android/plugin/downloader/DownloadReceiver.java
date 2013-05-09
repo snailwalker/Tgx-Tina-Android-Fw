@@ -1,17 +1,17 @@
 /*******************************************************************************
  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  *******************************************************************************/
 package com.tgx.tina.android.plugin.downloader;
 
@@ -29,14 +29,15 @@ import android.net.Uri;
 
 import java.io.File;
 
+
 /**
  * Receives system broadcasts (boot, network connectivity)
  */
 public class DownloadReceiver
-				extends
-				BroadcastReceiver
+        extends
+        BroadcastReceiver
 {
-
+	
 	public void onReceive(Context context, Intent intent) {
 		if (intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED))
 		{
@@ -116,7 +117,7 @@ public class DownloadReceiver
 						values.put(GlobalDownload.COLUMN_VISIBILITY, GlobalDownload.VISIBILITY_VISIBLE);
 						context.getContentResolver().update(intent.getData(), values, null, null);
 					}
-
+					
 					if (intent.getAction().equals(Constants.ACTION_OPEN))
 					{
 						int filenameColumn = cursor.getColumnIndexOrThrow(GlobalDownload._DATA);

@@ -1,23 +1,24 @@
- /*******************************************************************************
-  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
-  *
-  * Licensed under the Apache License, Version 2.0 (the "License");
-  * you may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at
-  *
-  * http://www.apache.org/licenses/LICENSE-2.0
-  *
-  * Unless required by applicable law or agreed to in writing, software
-  * distributed under the License is distributed on an "AS IS" BASIS,
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  *******************************************************************************/
- package base.tina.external.io;
+/*******************************************************************************
+ * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ *******************************************************************************/
+package base.tina.external.io;
 
 import base.tina.core.task.Task;
 import base.tina.core.task.infc.IDisposable;
 import base.tina.core.task.infc.ITaskResult;
+
 
 /**
  * 过滤器链,用于处理IConnection通道上的数据双向封包解包
@@ -29,19 +30,18 @@ import base.tina.core.task.infc.ITaskResult;
  */
 
 public abstract class IoFilter
-		implements
-		IDisposable
+        implements
+        IDisposable
 {
-	public static enum ResultType
-	{
+	public static enum ResultType {
 		NOT_OK, NEED_DATA, OK, HANDLED, INSIDE
 	};
-
-	protected String	name;
-	protected IoFilter	nextFilter;
-	protected IoFilter	preFilter;
-	protected boolean	isManual;
-
+	
+	protected String   name;
+	protected IoFilter nextFilter;
+	protected IoFilter preFilter;
+	protected boolean  isManual;
+	
 	/**
 	 * 默认为单次使用过滤器,将在{@link #dispose(boolean)}中完成注销
 	 * 
@@ -50,11 +50,10 @@ public abstract class IoFilter
 	 *            处理器名称,对过滤器进行增删时的标示,需唯一化
 	 * @see #IoFilter(String, boolean)
 	 */
-	public IoFilter(String name)
-	{
+	public IoFilter(String name) {
 		this.name = name;
 	}
-
+	
 	/**
 	 * @author Zhangzhuo
 	 * @param name
@@ -62,12 +61,11 @@ public abstract class IoFilter
 	 * @param isManual
 	 *            是否手动注销过滤器实例.如果需要对过滤器进行重用需要指定为true
 	 */
-	public IoFilter(String name, boolean isManual)
-	{
+	public IoFilter(String name, boolean isManual) {
 		this.name = name;
 		this.isManual = isManual;
 	}
-
+	
 	/**
 	 * Endoder 过滤器链
 	 * 
@@ -144,7 +142,7 @@ public abstract class IoFilter
 		}
 		return content;
 	}
-
+	
 	/**
 	 * Decoder 过滤器链
 	 * 
@@ -168,7 +166,7 @@ public abstract class IoFilter
 		{
 			resultType = nextFilter.preDecode(task, ioSession, content);
 			switch (resultType) {
-				//#ifdef debug
+			//#ifdef debug
 				case NOT_OK:
 					//#debug warn
 					base.tina.core.log.LogPrinter.w(null, "Content NOT_OK: " + content == null ? " null " : content.getClass().getSimpleName() + "@" + hashCode());
@@ -197,7 +195,7 @@ public abstract class IoFilter
 		while (nextFilter != null && resultType.equals(ResultType.OK));
 		return (ITaskResult) result;
 	}
-
+	
 	protected final void linkAfter(IoFilter ioFilter) {
 		if (ioFilter == null) return;
 		IoFilter filter = ioFilter.nextFilter;
@@ -205,15 +203,15 @@ public abstract class IoFilter
 		preFilter = ioFilter;
 		nextFilter = filter;
 	}
-
+	
 	public abstract ResultType preEncode(Task task, IoSession<?> ioSession, Object content);
-
+	
 	public abstract ResultType preDecode(Task task, IoSession<?> ioSession, Object content);
-
+	
 	public abstract Object encode(Task task, IoSession<?> ioSession, Object content) throws Exception;
-
+	
 	public abstract Object decode(Task task, IoSession<?> ioSession, Object content) throws Exception;
-
+	
 	public final static void insertBeforeFilter(IoFilter ioFilter, String preName, String name, IoFilter filter) {
 		if (name == null) throw new NullPointerException("filter name can't be NULL");
 		if (ioFilter != null)
@@ -248,7 +246,7 @@ public abstract class IoFilter
 		}
 		filter.name = name;
 	}
-
+	
 	public final static void insertAfterFilter(IoFilter ioFilter, String nextName, String name, IoFilter filter) {
 		if (name == null) throw new NullPointerException("filter name can't be NULL");
 		if (ioFilter != null)
@@ -263,7 +261,7 @@ public abstract class IoFilter
 			}
 			else
 			{
-
+				
 				while (afterFilter.nextFilter != null && !afterFilter.name.equals(nextName))
 				{
 					afterFilter = afterFilter.nextFilter;
@@ -284,7 +282,7 @@ public abstract class IoFilter
 		}
 		filter.name = name;
 	}
-
+	
 	/**
 	 * @param force
 	 *            强制注销当前节点链
@@ -292,7 +290,7 @@ public abstract class IoFilter
 	public void dispose(boolean force) {
 		if (isDisposable() || force) dispose();
 	}
-
+	
 	@Override
 	public void dispose() {
 		IoFilter filter;
@@ -303,12 +301,12 @@ public abstract class IoFilter
 			nextFilter = filter;
 		}
 	}
-
+	
 	@Override
 	public boolean isDisposable() {
 		return !isManual;
 	}
-
+	
 	public final String getName() {
 		return name;
 	}

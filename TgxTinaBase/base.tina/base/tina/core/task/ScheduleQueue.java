@@ -136,7 +136,7 @@ public class ScheduleQueue<E extends Task>
 			lock.unlock();
 		}
 	}
- 
+	
 	final boolean isEmpty() {
 		final ReentrantLock lock = this.lock;
 		lock.lock();

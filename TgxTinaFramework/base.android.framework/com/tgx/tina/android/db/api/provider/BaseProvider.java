@@ -111,7 +111,7 @@ public abstract class BaseProvider
 		//#else
 		//$LEVEL lv = LEVEL.WARN;
 		//#endif
-		AndroidPrinter.createByApp(context,lv);
+		AndroidPrinter.createByApp(context, lv);
 		// init config
 		String AUTHORITY = getAuthority();
 		config = new BaseProviderConfig(AUTHORITY, sURIMatcher);

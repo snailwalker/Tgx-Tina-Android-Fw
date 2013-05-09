@@ -1,17 +1,17 @@
 /*******************************************************************************
  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  *******************************************************************************/
 package com.tgx.tina.android.plugin.contacts.sync;
 
@@ -21,6 +21,7 @@ import android.provider.ContactsContract;
 import base.tina.external.io.IoUtil;
 
 import com.tgx.tina.android.plugin.contacts.base.Profile;
+
 
 /**
  * {@link http://www.ietf.org/rfc/rfc2425.txt }<br>
@@ -32,70 +33,68 @@ import com.tgx.tina.android.plugin.contacts.base.Profile;
  * @author Zhangzhuo
  */
 public class RawContactProfile
-				extends
-				Profile
+        extends
+        Profile
 {
-	public RawContactProfile()
-	{
+	public RawContactProfile() {
 		this(-1);
 	}
-
-	public RawContactProfile(int rawContactID)
-	{
+	
+	public RawContactProfile(int rawContactID) {
 		setRawContactID(rawContactID);
 	}
-
+	
 	@Override
 	public final void dispose() {
 		reset();
 		vCard = null;
 		super.dispose();
 	}
-
+	
 	@Override
 	public final int getContactID() {
 		return foreignKey;
 	}
-
+	
 	@Override
 	public final int getRawContactID() {
 		return primaryKey;
 	}
-
+	
 	public void setRawContactID(int rawContactID) {
 		primaryKey = rawContactID;
 	}
-
+	
 	public void setContactID(int contactID) {
 		foreignKey = contactID;
 	}
-
-	public final static int	SerialNum	= RawContactProfileSN;
-
+	
+	public final static int SerialNum = RawContactProfileSN;
+	
 	@Override
 	public int getSerialNum() {
 		return SerialNum;
 	}
-
-	public String		lookUpKey;				// UID
-	public String		displayName;			// contact display-name
-	public String[]		name;					// name field 7 field
-	public String[][]	phones;				    // [count][4] | [i][0]:phoneNum | [i][1]:phone mime type   | [i][2]: custom type label | [i][3]:phone callerloc
-	public String[][]	addresses;				// [count][10]| [i][0]:address  | [i][1]:address mime type | [i][2]: custom type label | [i][3-9]:detail
-	public String[][]	emails;				    // [count][3] | [i][0]:email    | [i][1]:email mime type   | [i][2]: custom type label
-	public String[][]	orgs;					// [count][5] | [i][0]:organization | [i][1]:organization mime type | [i][2]: custom type label | [i][3]:title | [i][4]:role
-	public String[]		webUrls;
-	public String		birthday;
-	public String		photoEncoded;
-	public String		nickName;
-	public String		note;
-	public String		gender;				    // TODO 标准 应该为2段字符 [0]:
-												// {"M"|male,"F"|fmale,"O"|other,"U"|unknow,""|} [1]: {";" text}
-	public String[]		groupMemberShip;
-	public long[]		groupMemberShipID;
-	public long			groupMemberShipMask;
-	public String		vCard;
-
+	
+	public String     lookUpKey;          // UID
+	public String     displayName;        // contact display-name
+	public String[]   name;               // name field 7 field
+	public String[][] phones;             // [count][4] | [i][0]:phoneNum | [i][1]:phone mime type   | [i][2]: custom type label | [i][3]:phone callerloc
+	public String[][] addresses;          // [count][10]| [i][0]:address  | [i][1]:address mime type | [i][2]: custom type label | [i][3-9]:detail
+	public String[][] emails;             // [count][3] | [i][0]:email    | [i][1]:email mime type   | [i][2]: custom type label
+	public String[][] orgs;               // [count][5] | [i][0]:organization | [i][1]:organization mime type | [i][2]: custom type label | [i][3]:title | [i][4]:role
+	public String[]   webUrls;
+	public String     birthday;
+	public String     photoEncoded;
+	public String     nickName;
+	public String     note;
+	public String     gender;             // TODO 标准 应该为2段字符 [0]:
+	                                       // {"M"|male,"F"|fmale,"O"|other,"U"|unknow,""|} [1]: {";" text}
+	public String[]   groupMemberShip;
+	public long[]     groupMemberShipID;
+	public long       groupMemberShipMask;
+	public String     vCard;
+	
 	public void clone(RawContactProfile rawContactProfile) {
 		rawContactProfile.primaryKey = primaryKey;
 		rawContactProfile.foreignKey = foreignKey;
@@ -174,14 +173,14 @@ public class RawContactProfile
 			}
 		}
 	}
-
+	
 	@Override
 	public Profile clone() {
 		RawContactProfile rawContactProfile = new RawContactProfile();
 		clone(rawContactProfile);
 		return rawContactProfile;
 	}
-
+	
 	// 重置所有属性项
 	public void reset() {
 		lookUpKey = null;
@@ -231,26 +230,26 @@ public class RawContactProfile
 		nickName = null;
 		note = null;
 	}
-
+	
 	public String vCardEncode() throws Exception {
 		return vCardEncode("2.1", "UTF-8", true);
 	}
-
+	
 	public String vCardEncode(boolean encodePhoto) throws Exception {
 		return vCardEncode("2.1", "UTF-8", encodePhoto);
 	}
-
+	
 	public String vCardEncode(String version, String charSet) {
 		return vCardEncode(version, charSet, true);
 	}
-
-	protected String[]	common;
-
+	
+	protected String[] common;
+	
 	public String vCardEncode(String version, String charSet, boolean encodePhoto) {
 		boolean hasData = false;
 		common = new String[] {
-						"CHARSET=" + charSet ,
-						"ENCODING=QUOTED-PRINTABLE"
+		        "CHARSET=" + charSet,
+		        "ENCODING=QUOTED-PRINTABLE"
 		};
 		StringBuffer buffer = new StringBuffer();
 		addField(buffer, "BEGIN", null, "VCARD");
@@ -303,7 +302,7 @@ public class RawContactProfile
 				}
 			}
 		}
-
+		
 		if (groupMemberShip != null)
 		{
 			for (String group : groupMemberShip)
@@ -314,7 +313,7 @@ public class RawContactProfile
 				}
 			}
 		}
-
+		
 		if (webUrls != null)
 		{
 			for (String webUrl : webUrls)
@@ -332,19 +331,19 @@ public class RawContactProfile
 		if (encodePhoto)
 		{
 			hasData = addField(buffer, "PHOTO", new String[] {
-							"ENCODING=b"
+				"ENCODING=b"
 			}, photoEncoded) || hasData;
 		}
 		hasData = vCardEncodeEx(buffer, charSet, encodePhoto) || hasData;
 		buffer.append("END:VCARD");
 		return hasData ? buffer.toString() : null;
 	}
-
+	
 	// 留做被继承后做扩展用
 	protected boolean vCardEncodeEx(StringBuffer vcard, String charSet, boolean encodePhoto) {
 		return false;
 	}
-
+	
 	// 此处或许正则更高效,但是使用split可以更好的向Kjava进行兼容.
 	public void vCardDecode(String vCard) {
 		String[] splits = IoUtil.splitString(vCard, ":", 0);
@@ -362,29 +361,29 @@ public class RawContactProfile
 		else throw new IllegalArgumentException("vCard string is invalid");
 		this.vCard = vCard;
 	}
-
-	final static int	FIELD_KEY	= 0;
-	final static int	FIELD_VALUE	= FIELD_KEY + 1;
-	final static int	FIELD_COUNT	= FIELD_VALUE + 1;
-
-	int					offset		= 0;
-
+	
+	final static int FIELD_KEY   = 0;
+	final static int FIELD_VALUE = FIELD_KEY + 1;
+	final static int FIELD_COUNT = FIELD_VALUE + 1;
+	
+	int              offset      = 0;
+	
 	String[] fieldParser(String[] splits, int start) {
 		if (start == splits.length - 2) return new String[] {
-						"END" ,
-						"VCARD"
+		        "END",
+		        "VCARD"
 		};
 		String[] fields = new String[FIELD_COUNT];
 		int begin = 0;
-
+		
 		begin = splits[start].lastIndexOf('\n');
 		fields[FIELD_KEY] = splits[start].substring(begin + 1); // 先取出key
 		StringBuffer text = new StringBuffer();
 		while (true)
 		{
-
+			
 			begin = splits[start + offset].lastIndexOf('\n'); // value 为
-																// key后面值。value是以\n结尾的
+			                                                  // key后面值。value是以\n结尾的
 			if (begin < 0)
 			{
 				text.append(splits[start + offset]).append(":");
@@ -400,10 +399,10 @@ public class RawContactProfile
 		}
 		return fields;
 	}
-
+	
 	void fieldDecode(String[] field) {
 		String charSet = "UTF-8"; // default;
-		@SuppressWarnings("unused")
+		@SuppressWarnings ("unused")
 		boolean isBase64 = false, isQpEncoded = false;
 		String fieldKey = field[FIELD_KEY];
 		String fieldValue = field[FIELD_VALUE].trim();
@@ -460,7 +459,7 @@ public class RawContactProfile
 			}
 			fieldArgs = fieldArgsBuffer.toString();
 		}
-
+		
 		if (isQpEncoded) fieldValue = IoUtil.quoted_print_Decoding(fieldValue, charSet);
 		if (fieldValue == null) return;
 		/*
@@ -632,11 +631,11 @@ public class RawContactProfile
 		}
 		else vCardDecodeEx(fieldMain, fieldValue);
 	}
-
+	
 	// 留做被继承后做扩展用
 	protected void vCardDecodeEx(String toParse, String field) {
 	}
-
+	
 	final String formatName() {
 		StringBuffer nameBuild = new StringBuffer();
 		if (name[PREFIX_NAME] != null) nameBuild.append(name[PREFIX_NAME]).append(' ');
@@ -647,7 +646,7 @@ public class RawContactProfile
 		if (name[OTHER_NAME] != null) nameBuild.append(' ').append(name[OTHER_NAME]);
 		return nameBuild.toString();
 	}
-
+	
 	final String formatN(String charSet) {
 		if (name == null || name[DISPLAY_NAME] == null) return null;
 		StringBuffer n = new StringBuffer();
@@ -664,7 +663,7 @@ public class RawContactProfile
 		if (name[OTHER_NAME] != null) n.append(name[OTHER_NAME]);
 		return IoUtil.quoted_print_Encoding(n.toString(), charSet);
 	}
-
+	
 	// final String formatORG(String charSet) {
 	// if (orgs == null) return null;
 	// StringBuffer n = new StringBuffer();
@@ -679,11 +678,11 @@ public class RawContactProfile
 	// if (orgs[SUFFIX_NAME] != null) n.append(orgs[SUFFIX_NAME]);
 	// return IoUtil.quoted_print_Encoding(n.toString(), charSet);
 	// }
-
+	
 	final void swapName() {
 		String nameBuild = formatName();
 		if (!nameBuild.equals("") && !nameBuild.equals(displayName))// nameBuild.equals("")的情况证明name中无有效信息存在直接略过|displayName
-																	// 可能为null
+		                                                            // 可能为null
 		{
 			// 先实现最常见的两种可能性,其他的遇到再说
 			if (name[GIVEN_NAME] != null && name[FAMILY_NAME] != null)
@@ -705,7 +704,7 @@ public class RawContactProfile
 		name[DISPLAY_NAME] = displayName;
 		// name[DISPLAY_NAME] = null;
 	}
-
+	
 	final String formatAddress(String[] address) {
 		StringBuffer addressBuild = new StringBuffer();
 		if (address[ADDRESS_POBOX] != null) addressBuild.append(address[ADDRESS_POBOX]).append('\n');
@@ -721,7 +720,7 @@ public class RawContactProfile
 		if (address[ADDRESS_COUNTRY] != null) addressBuild.append(address[ADDRESS_COUNTRY]);
 		return addressBuild.toString();
 	}
-
+	
 	final boolean addAddress(String fieldArgs, String fieldValue) {
 		String[] splits = IoUtil.splitString(fieldValue, ";", 0);
 		boolean inserted = false;
@@ -762,7 +761,7 @@ public class RawContactProfile
 				// ; PO Box, Extended Address, Street, Locality, Region, Postal
 				// Code,Country Name
 				// The NEIGHBORHOOD field is appended after the CITY field.
-
+				
 				if (tmp[ADDRESS_LABEL] != null) tmp[CONTENT_INDEX] = tmp[ADDRESS_LABEL];
 				else
 				{
@@ -775,7 +774,7 @@ public class RawContactProfile
 		}
 		return inserted;
 	}
-
+	
 	final String[] orgArgs(String[] src, String[] oldArg, String charSet) {
 		String[] dst = new String[1];
 		if (src[MIMETYPE_INDEX] == null) src[MIMETYPE_INDEX] = "2";
@@ -795,14 +794,14 @@ public class RawContactProfile
 		if (oldArg != null) System.arraycopy(oldArg, 0, result, dst.length, oldArg.length);
 		return result;
 	}
-
+	
 	final String orgField(String[] org, String charSet) {
 		if (org == null || org[CONTENT_INDEX] == null) return null;
 		StringBuffer n = new StringBuffer();
 		if (org[CONTENT_INDEX] != null) n.append(org[CONTENT_INDEX]);
 		return IoUtil.quoted_print_Encoding(n.toString(), charSet);
 	}
-
+	
 	final String[] titleArgs(String[] src, String[] oldArg, String charSet) {
 		String[] dst = new String[1];
 		switch (Integer.parseInt(src[MIMETYPE_INDEX])) {
@@ -821,14 +820,14 @@ public class RawContactProfile
 		if (oldArg != null) System.arraycopy(oldArg, 0, result, dst.length, oldArg.length);
 		return dst;
 	}
-
+	
 	final String titleField(String[] org, String charSet) {
 		if (org == null || org[ORG_TITEL] == null) return null;
 		StringBuffer n = new StringBuffer();
 		if (org[ORG_TITEL] != null) n.append(org[ORG_TITEL]);
 		return IoUtil.quoted_print_Encoding(n.toString(), charSet);
 	}
-
+	
 	final String[] addressArgs(String[] src, String[] oldArg, String charSet) {
 		String[] dst = null;
 		if (src[ADDRESS_LABEL] != null)
@@ -853,7 +852,7 @@ public class RawContactProfile
 		if (oldArg != null) System.arraycopy(oldArg, 0, result, dst.length, oldArg.length);
 		return result;
 	}
-
+	
 	final String addressField(String[] address, String charSet) {
 		if (address == null || address[CONTENT_INDEX] == null) return null;
 		StringBuffer n = new StringBuffer();
@@ -872,7 +871,7 @@ public class RawContactProfile
 		if (address[ADDRESS_COUNTRY] != null) n.append(address[ADDRESS_COUNTRY]);
 		return IoUtil.quoted_print_Encoding(n.toString(), charSet);
 	}
-
+	
 	final boolean addTel(String fieldArgs, String fieldValue) {
 		String[] splits = IoUtil.splitString(fieldArgs, ";", 0);
 		boolean inserted = false;
@@ -998,14 +997,14 @@ public class RawContactProfile
 		}
 		return inserted;
 	}
-
+	
 	final boolean addEmail(String fieldArgs, String fieldValue) {
 		boolean inserted = false;
 		for (String[] tmp : emails)
 		{
 			if (tmp[CONTENT_INDEX] == null)
 			{
-
+				
 				if (fieldArgs.indexOf("HOME") >= 0)
 				{
 					tmp[MIMETYPE_INDEX] = String.valueOf(ContactsContract.CommonDataKinds.Email.TYPE_HOME);
@@ -1022,7 +1021,7 @@ public class RawContactProfile
 				{
 					tmp[MIMETYPE_INDEX] = String.valueOf(ContactsContract.CommonDataKinds.Email.TYPE_OTHER);
 				}
-
+				
 				tmp[CONTENT_INDEX] = fieldValue.equals("") ? null : fieldValue;
 				inserted = true;// 此处恒等true的理由为使emails 不再增容
 				break;
@@ -1030,7 +1029,7 @@ public class RawContactProfile
 		}
 		return inserted;
 	}
-
+	
 	final boolean addOrg(String fieldArgs, String fieldValue) {
 		boolean inserted = false;
 		String[] splits = IoUtil.splitString(fieldArgs, ";", 0);
@@ -1078,7 +1077,7 @@ public class RawContactProfile
 		}
 		return inserted;
 	}
-
+	
 	final void addTitle(String fieldArgs, String fieldValue) {
 		for (String[] tmp : orgs)
 		{
@@ -1089,13 +1088,13 @@ public class RawContactProfile
 			}
 		}
 	}
-
+	
 	final void swap(String[] src, int a, int b) {
 		String tmp = src[a];
 		src[a] = src[b];
 		src[b] = tmp;
 	}
-
+	
 	protected boolean addField(StringBuffer buffer, String mimeType, String[] args, String field) {
 		if (field == null || field.equals("")) return false;
 		buffer.append(mimeType);
@@ -1106,38 +1105,38 @@ public class RawContactProfile
 		buffer.append("\r\n");
 		return true;
 	}
-
-	public final static int		CONTENT_INDEX			= 0;
-	public final static int		MIMETYPE_INDEX			= CONTENT_INDEX + 1;
-	public final static int		SUB_CONTENT_INDEX		= MIMETYPE_INDEX + 1;
-	public final static int		TYPE_LABEL				= MIMETYPE_INDEX + 1;
-
-	public final static int		DISPLAY_NAME			= 0;
-	public final static int		PREFIX_NAME				= DISPLAY_NAME + 1;
-	public final static int		GIVEN_NAME				= PREFIX_NAME + 1;
-	public final static int		MIDDLE_NAME				= GIVEN_NAME + 1;
-	public final static int		FAMILY_NAME				= MIDDLE_NAME + 1;
-	public final static int		SUFFIX_NAME				= FAMILY_NAME + 1;
-	public final static int		OTHER_NAME				= SUFFIX_NAME + 1;
-
-	public final static int		ADDRESS_POBOX			= MIMETYPE_INDEX + 1;
-	public final static int		ADDRESS_NEIGHBORHOOD	= ADDRESS_POBOX + 1;		// 县/市
-	public final static int		ADDRESS_STREET			= ADDRESS_NEIGHBORHOOD + 1;
-	public final static int		ADDRESS_CITY			= ADDRESS_STREET + 1;		// 市?村?
-	public final static int		ADDRESS_REGION			= ADDRESS_CITY + 1;		// 省
-	public final static int		ADDRESS_POSTCODE		= ADDRESS_REGION + 1;		// 邮证编码
-	public final static int		ADDRESS_COUNTRY			= ADDRESS_POSTCODE + 1;	// 国
-	public final static int		ADDRESS_LABEL			= ADDRESS_COUNTRY + 1;
-
-	public final static int		ORG_TITEL				= SUB_CONTENT_INDEX + 1;
-	public final static int		ORG_ROLE				= ORG_TITEL + 1;
-	public final static String	DEFUALT_BDAY_YEAR		= "1995";
-
-	public final static int		PHONE_LOCAL				= SUB_CONTENT_INDEX + 1;
-
-	public byte					toDo;
-	public final static byte	toDelete				= 1;
-	public final static byte	toInsert				= 1 << 1;
-	public final static byte	toReplace				= 1 << 2;
-
+	
+	public final static int    CONTENT_INDEX        = 0;
+	public final static int    MIMETYPE_INDEX       = CONTENT_INDEX + 1;
+	public final static int    SUB_CONTENT_INDEX    = MIMETYPE_INDEX + 1;
+	public final static int    TYPE_LABEL           = MIMETYPE_INDEX + 1;
+	
+	public final static int    DISPLAY_NAME         = 0;
+	public final static int    PREFIX_NAME          = DISPLAY_NAME + 1;
+	public final static int    GIVEN_NAME           = PREFIX_NAME + 1;
+	public final static int    MIDDLE_NAME          = GIVEN_NAME + 1;
+	public final static int    FAMILY_NAME          = MIDDLE_NAME + 1;
+	public final static int    SUFFIX_NAME          = FAMILY_NAME + 1;
+	public final static int    OTHER_NAME           = SUFFIX_NAME + 1;
+	
+	public final static int    ADDRESS_POBOX        = MIMETYPE_INDEX + 1;
+	public final static int    ADDRESS_NEIGHBORHOOD = ADDRESS_POBOX + 1;       // 县/市
+	public final static int    ADDRESS_STREET       = ADDRESS_NEIGHBORHOOD + 1;
+	public final static int    ADDRESS_CITY         = ADDRESS_STREET + 1;      // 市?村?
+	public final static int    ADDRESS_REGION       = ADDRESS_CITY + 1;        // 省
+	public final static int    ADDRESS_POSTCODE     = ADDRESS_REGION + 1;      // 邮证编码
+	public final static int    ADDRESS_COUNTRY      = ADDRESS_POSTCODE + 1;    // 国
+	public final static int    ADDRESS_LABEL        = ADDRESS_COUNTRY + 1;
+	
+	public final static int    ORG_TITEL            = SUB_CONTENT_INDEX + 1;
+	public final static int    ORG_ROLE             = ORG_TITEL + 1;
+	public final static String DEFUALT_BDAY_YEAR    = "1995";
+	
+	public final static int    PHONE_LOCAL          = SUB_CONTENT_INDEX + 1;
+	
+	public byte                toDo;
+	public final static byte   toDelete             = 1;
+	public final static byte   toInsert             = 1 << 1;
+	public final static byte   toReplace            = 1 << 2;
+	
 }

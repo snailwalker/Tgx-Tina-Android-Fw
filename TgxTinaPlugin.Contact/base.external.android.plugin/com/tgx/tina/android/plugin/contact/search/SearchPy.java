@@ -6,6 +6,7 @@ import java.util.Map;
 
 import com.tgx.tina.android.plugin.contact.search.SearchInfo.MATCH_TYPE;
 
+
 /**
  * SearchPy 为通讯录号码拼音搜索进行功能提供的类库，使用Apache license Version2 协议进行开源分发。
  * 
@@ -47,10 +48,10 @@ public class SearchPy<T>
 	{
 		System.loadLibrary("searchpy");
 	}
-	public volatile boolean	ReadLock	= false;
-	private SearchInfo<T>[]	srcInfos;
-	private int				domainAdr;
-
+	public volatile boolean ReadLock = false;
+	private SearchInfo<T>[] srcInfos;
+	private int             domainAdr;
+	
 	/**
 	 * @param srcInfos
 	 *            用来初始索引的基础数据
@@ -60,24 +61,24 @@ public class SearchPy<T>
 	 *         srcInfos.length+1
 	 */
 	native int[] initInfos(SearchInfo<T>[] srcInfos, int mode, int oldAdr);
-
+	
 	/**
 	 * 搜索算法
 	 */
 	native int[] search(int tree, String key, int[] lastSearched, int start, int limit, long filter, boolean isT9);
-
+	
 	native int[] getFirstPyPrimaryKeys(int tree, long filter);
-
+	
 	native int[] getInfosPrimaryKeys(int tree, long filter);
-
+	
 	native String[] getHightLights(int tree, int[] searched, String keyText, String dyeStr, boolean isT9);
-
+	
 	native String[] getPyHightLights(int tree, int[] searched, String keyText, String dyeStr, boolean isT9);
-
+	
 	native String[] getNameHightLights(int tree, int[] searched, String keyText, String dyeStr, boolean isT9);
-
+	
 	native String[] getPhoneHightLights(int tree, int[] searched, String keyText, String dyeStr);
-
+	
 	/**
 	 * @param searchedInfos
 	 *            已搜出的结果集合
@@ -103,7 +104,7 @@ public class SearchPy<T>
 		for (int i = 0; i < limit; i++)
 			searchedInfos[start + i].dyePhone = resultArray[i];
 	}
-
+	
 	/**
 	 * @param searchedInfos
 	 *            已搜出的结果集合
@@ -125,9 +126,9 @@ public class SearchPy<T>
 		int[] lastSearchedIndex = new int[limit];
 		for (int i = 0; i < limit; i++)
 			lastSearchedIndex[i] = (searchedInfos[start + i].index << 8) | (searchedInfos[start + i].matchPhoneID & 0xFF);
-
+		
 		String[] resultArray = getHightLights(domainAdr, lastSearchedIndex, keyText, dyeStr, isT9);
-
+		
 		for (int i = 0; i < limit; i++)
 		{
 			SearchInfo<T> info = searchedInfos[start + i];
@@ -141,10 +142,10 @@ public class SearchPy<T>
 				info.dyePhone = resultArray[i];
 				info.dyeName = info.name;
 			}
-
+			
 		}
 	}
-
+	
 	//*----------------------------------------------------------------
 	/**
 	 * @param searchedInfos
@@ -171,7 +172,7 @@ public class SearchPy<T>
 		for (int i = 0; i < limit; i++)
 			searchedInfos[start + i].dyeName = resultArray[i];
 	}
-
+	
 	/**
 	 * @param searchedInfos
 	 *            已搜出的结果集合
@@ -197,7 +198,7 @@ public class SearchPy<T>
 		for (int i = 0; i < limit; i++)
 			searchedInfos[start + i].dyeName = resultArray[i];
 	}
-
+	
 	/**
 	 * @param srcInfos
 	 *            需要进行初始化的数据。
@@ -217,13 +218,13 @@ public class SearchPy<T>
 			srcInfos[i].index = i;
 		domainAdr = des[0];
 	}
-
+	
 	public SearchInfo<T>[] getPrimaryPyIndex(long filter, Map<String, Integer> indexMap) {
 		char[] chars = "abcdefghijklmnopqrstuvwxyz#".toUpperCase().toCharArray();
 		int[] index = getFirstPyPrimaryKeys(domainAdr, filter);
 		int[] primaryKeys = getInfosPrimaryKeys(domainAdr, filter);
 		if (primaryKeys == null) return null;
-		@SuppressWarnings("unchecked")
+		@SuppressWarnings ("unchecked")
 		SearchInfo<T>[] infos = new SearchInfo[primaryKeys.length];
 		for (int i = 0; i < primaryKeys.length; i++)
 		{
@@ -240,26 +241,25 @@ public class SearchPy<T>
 		}
 		return infos;
 	}
-
+	
 	public void disposeOld() {
 		if (srcInfos != null) for (SearchInfo<T> info : srcInfos)
 			info.dispose();
 		srcInfos = null;
 	}
-
-	public final Comparator<SearchInfo<T>>	cOrderInfoComparator	= new Comparator<SearchInfo<T>>()
-																	{
-																		@Override
-																		public int compare(SearchInfo<T> lhs, SearchInfo<T> rhs) {
-																			return lhs.cOrder < rhs.cOrder ? -1 : lhs.cOrder > rhs.cOrder ? 1 : 0;
-																		}
-																	};
-
-	public enum Result
-	{
+	
+	public final Comparator<SearchInfo<T>> cOrderInfoComparator = new Comparator<SearchInfo<T>>()
+	                                                            {
+		                                                            @Override
+		                                                            public int compare(SearchInfo<T> lhs, SearchInfo<T> rhs) {
+			                                                            return lhs.cOrder < rhs.cOrder ? -1 : lhs.cOrder > rhs.cOrder ? 1 : 0;
+		                                                            }
+	                                                            };
+	
+	public enum Result {
 		FOR_NAME, FOR_PHONE
 	}
-
+	
 	/**
 	 * @param key
 	 *            搜索使用的KeyWord
@@ -275,15 +275,14 @@ public class SearchPy<T>
 	 *            搜索时是否使用T9映射
 	 * @return SearchInfo[][] result[0] 姓名搜索集合，result[1] 号码搜索集合
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings ("unchecked")
 	public SearchInfo<T>[][] javaSearch(String key, int[] lastSearched, int start, int limit, long filter, boolean isT9) {
 		if (ReadLock) return null;
-		if (lastSearched != null && lastSearched.length > 0 && (start < 0 || start + limit > lastSearched.length)) throw new IllegalArgumentException(
-						"<start>/<limit> is invaild");
+		if (lastSearched != null && lastSearched.length > 0 && (start < 0 || start + limit > lastSearched.length)) throw new IllegalArgumentException("<start>/<limit> is invaild");
 		int[] resultArray = search(domainAdr, key, lastSearched, start, limit, filter, isT9);
-
+		
 		if (resultArray == null) return null;
-
+		
 		SearchInfo<T>[] resultName, resultPhone;
 		int nameArrayLength = 0, phoneArrayLength = 0;
 		MATCH_TYPE matchType = MATCH_TYPE.NameMatch;
@@ -300,7 +299,7 @@ public class SearchPy<T>
 		}
 		resultName = nameArrayLength > 0 ? new SearchInfo[nameArrayLength] : null;
 		resultPhone = phoneArrayLength > 0 ? new SearchInfo[phoneArrayLength] : null;
-
+		
 		SearchInfo<T>[][] result = new SearchInfo[2][];
 		result[Result.FOR_NAME.ordinal()] = resultName;
 		result[Result.FOR_PHONE.ordinal()] = resultPhone;
@@ -328,7 +327,7 @@ public class SearchPy<T>
 		}
 		return result;
 	}
-
+	
 	/**
 	 * @param key
 	 *            搜索使用的KeyWord
@@ -346,12 +345,11 @@ public class SearchPy<T>
 	 */
 	public SearchInfo<T>[] javaSearchAll(String key, int[] lastSearched, int start, int limit, long filter, boolean isT9) {
 		if (ReadLock) return null;
-		if (lastSearched != null && lastSearched.length > 0 && (start < 0 || start + limit > lastSearched.length)) throw new IllegalArgumentException(
-						"<start>/<limit> is invaild");
+		if (lastSearched != null && lastSearched.length > 0 && (start < 0 || start + limit > lastSearched.length)) throw new IllegalArgumentException("<start>/<limit> is invaild");
 		int[] resultArray = search(domainAdr, key, lastSearched, start, limit, filter, isT9);
-
+		
 		if (resultArray == null) return null;
-		@SuppressWarnings("unchecked")
+		@SuppressWarnings ("unchecked")
 		SearchInfo<T>[] result = new SearchInfo[resultArray.length - 1];
 		MATCH_TYPE matchType = MATCH_TYPE.NameMatch;
 		for (int i = 0, j = 0, primaryKey = -1, phoneIndex = -1; j < resultArray.length; j++)//primaryKey =-1时用来隔开姓名匹配结果和号码匹配结果

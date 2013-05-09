@@ -122,17 +122,18 @@ public class SmsInterceptUtil
 					{
 						multiMsg = toPackMsgs.get(tp_sign);
 					}
-					int index = userData[5];
+					int index = userData[5] & 0xFF;
 					
 					//#debug
-					base.tina.core.log.LogPrinter.d(null, "[cdma long SMS] part index: " + index);
+					base.tina.core.log.LogPrinter.d(null, "[cdma long SMS] part index: " + index + " O:" + userData[5]);
 					
-					if (index < 0 || index >= multiMsg.parts.length)
+					if (index < 0 || index > multiMsg.parts.length)
 					{
 						//#debug warn
 						base.tina.core.log.LogPrinter.w(null, "[cdma long SMS] part error:index");
 						continue PDUS;
 					}
+					index--;
 					multiMsg.parts[index] = new SMS_MULTI_PARTS();
 					multiMsg.parts[index].phone = smsMessage.getDisplayOriginatingAddress();
 					multiMsg.parts[index].content = smsMessage.getDisplayMessageBody();
@@ -180,7 +181,6 @@ public class SmsInterceptUtil
 					// ~插入服务的队列
 					msgGather.gatherMsg(messagePack);
 				}
-				
 			}
 			else
 			{
@@ -292,7 +292,7 @@ public class SmsInterceptUtil
 						}
 					}
 					multiMsg.dispose();
-					toPackMsgs.remove(i);
+					toPackMsgs.remove(toPackMsgs.keyAt(i));
 				}
 			}
 		}

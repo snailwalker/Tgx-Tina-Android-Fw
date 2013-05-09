@@ -1,17 +1,17 @@
 /*******************************************************************************
  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  *******************************************************************************/
 package com.tgx.tina.android.plugin.contacts.sync;
 
@@ -25,6 +25,7 @@ import base.tina.external.io.IoUtil;
 
 import com.tgx.tina.android.plugin.contacts.base.ContactTask;
 
+
 /**
  * 用以给需要获取特定RawContactID时返回RawContactProfile
  * 
@@ -32,19 +33,18 @@ import com.tgx.tina.android.plugin.contacts.base.ContactTask;
  */
 
 public class RawContactReadTask
-				extends
-				ContactTask
+        extends
+        ContactTask
 {
-	protected int[]				rawContactIDs;
-	private TaskProgressType	progressType	= TaskProgressType.horizontal;
-
-	public RawContactReadTask(Context context, int[] rawContactIDs)
-	{
+	protected int[]          rawContactIDs;
+	private TaskProgressType progressType = TaskProgressType.horizontal;
+	
+	public RawContactReadTask(Context context, int[] rawContactIDs) {
 		super(context);
 		this.rawContactIDs = rawContactIDs;
 		profileMap = new SparseArray<RawContactProfile>();
 	}
-
+	
 	@Override
 	public void dispose() {
 		profileMap.clear();
@@ -52,20 +52,20 @@ public class RawContactReadTask
 		progressType = null;
 		super.dispose();
 	}
-
-	public final static int	SerialNum	= RawContactReadTaskSN;
-
+	
+	public final static int SerialNum = RawContactReadTaskSN;
+	
 	@Override
 	public int getSerialNum() {
 		return SerialNum;
 	}
-
+	
 	public void setTaskProgressType(TaskProgressType type) {
 		progressType = type;
 	}
-
-	protected SparseArray<RawContactProfile>	profileMap;
-
+	
+	protected SparseArray<RawContactProfile> profileMap;
+	
 	protected void initProfileMap() {
 		for (int i = 0; i < rawContactIDs.length; i++)
 		{
@@ -73,7 +73,7 @@ public class RawContactReadTask
 			profileMap.put(rawContactIDs[i], profile);
 		}
 	}
-
+	
 	protected RawContactPack getPack() {
 		RawContactPack profilePack = new RawContactPack();
 		final String[] SELECTION_ARGS = new String[rawContactIDs.length];
@@ -110,7 +110,7 @@ public class RawContactReadTask
 					lastRawContatcID = rawContactID;
 					if (progress != null) progress.updateProgress(progressType, 1);
 				}
-
+				
 				contactID = cursor.getInt(RawContactReadAllTask.DATA_PROJECTIONMAP.get(Data.CONTACT_ID));
 				profile.setContactID(contactID);
 				mimeType = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(Data.MIMETYPE));
@@ -152,8 +152,7 @@ public class RawContactReadTask
 					profile.addresses[address_index][RawContactProfile.ADDRESS_LABEL] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredPostal.LABEL));
 					profile.addresses[address_index][RawContactProfile.ADDRESS_STREET] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredPostal.STREET));
 					profile.addresses[address_index][RawContactProfile.ADDRESS_POBOX] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredPostal.POBOX));
-					profile.addresses[address_index][RawContactProfile.ADDRESS_NEIGHBORHOOD] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP
-									.get(ContactsContract.CommonDataKinds.StructuredPostal.NEIGHBORHOOD));
+					profile.addresses[address_index][RawContactProfile.ADDRESS_NEIGHBORHOOD] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredPostal.NEIGHBORHOOD));
 					profile.addresses[address_index][RawContactProfile.ADDRESS_CITY] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredPostal.CITY));
 					profile.addresses[address_index][RawContactProfile.ADDRESS_REGION] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredPostal.REGION));
 					profile.addresses[address_index][RawContactProfile.ADDRESS_POSTCODE] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredPostal.POSTCODE));
@@ -207,10 +206,8 @@ public class RawContactReadTask
 					int webUrl_index = profile.webUrls.length - 1;
 					profile.webUrls[webUrl_index] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Website.URL));
 				}
-				else if (ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE.equals(mimeType)) profile.note = cursor
-								.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Note.NOTE));
-				else if (ContactsContract.CommonDataKinds.Nickname.CONTENT_ITEM_TYPE.equals(mimeType)) profile.nickName = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP
-								.get(ContactsContract.CommonDataKinds.Nickname.NAME));
+				else if (ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE.equals(mimeType)) profile.note = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Note.NOTE));
+				else if (ContactsContract.CommonDataKinds.Nickname.CONTENT_ITEM_TYPE.equals(mimeType)) profile.nickName = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Nickname.NAME));
 				else if (ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE.equals(mimeType))
 				{
 					byte[] photoData = cursor.getBlob(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Photo.PHOTO));
@@ -232,10 +229,10 @@ public class RawContactReadTask
 		}
 		if (profileMap != null) profileMap.clear();
 		if (progress != null) progress.finishProgress(disable ? TaskProgressType.cancel : TaskProgressType.complete);
-
+		
 		return profilePack;
 	}
-
+	
 	@Override
 	public void run() throws Exception {
 		if (rawContactIDs == null) return;

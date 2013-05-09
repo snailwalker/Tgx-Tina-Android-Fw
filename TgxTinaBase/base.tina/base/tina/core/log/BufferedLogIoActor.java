@@ -46,7 +46,9 @@ public abstract class BufferedLogIoActor
 		{
 			fSeekBegin = rf.readInt();
 			fSeekEnd = rf.readInt();
-		}else {
+		}
+		else
+		{
 			fSeekBegin = 0;
 			fSeekEnd = 0;
 		}

@@ -1,17 +1,17 @@
 /*******************************************************************************
  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  *******************************************************************************/
 package com.tgx.tina.android.plugin.contacts.sync;
 
@@ -31,6 +31,7 @@ import base.tina.external.io.IoUtil;
 
 import com.tgx.tina.android.plugin.contacts.base.ContactTask;
 
+
 /**
  * 用以写入通讯录数据
  * 
@@ -38,29 +39,27 @@ import com.tgx.tina.android.plugin.contacts.base.ContactTask;
  */
 
 public class RawContactWriteTask
-				extends
-				ContactTask
+        extends
+        ContactTask
 {
-	public final static int	SerialNum	= RawContactWriteTaskSN;
-
+	public final static int SerialNum = RawContactWriteTaskSN;
+	
 	@Override
 	public int getSerialNum() {
 		return SerialNum;
 	}
-
-	protected RawContactProfile	rawContactProfile;
-	Account						mAccount;
-	TaskProgressType			progressType	= TaskProgressType.horizontal;
-
-	public RawContactWriteTask(Context context, RawContactProfile rawContactProfile, Account account)
-	{
+	
+	protected RawContactProfile rawContactProfile;
+	Account                     mAccount;
+	TaskProgressType            progressType = TaskProgressType.horizontal;
+	
+	public RawContactWriteTask(Context context, RawContactProfile rawContactProfile, Account account) {
 		super(context);
 		this.rawContactProfile = rawContactProfile;
 		this.mAccount = account;
 	}
-
-	public RawContactWriteTask(Context context, String todoAndvCard, Account account)
-	{
+	
+	public RawContactWriteTask(Context context, String todoAndvCard, Account account) {
 		super(context);
 		RawContactProfile rawContactProfile = new RawContactProfile(-1);
 		if (todoAndvCard.startsWith("add|")) rawContactProfile.toDo = RawContactProfile.toInsert;
@@ -72,7 +71,7 @@ public class RawContactWriteTask
 		this.mAccount = account;
 		this.rawContactProfile = rawContactProfile;
 	}
-
+	
 	@Override
 	public void dispose() {
 		if (rawContactProfile != null) rawContactProfile.dispose();
@@ -80,11 +79,11 @@ public class RawContactWriteTask
 		progressType = null;
 		super.dispose();
 	}
-
+	
 	public void setTaskProgressType(TaskProgressType type) {
 		progressType = type;
 	}
-
+	
 	public void writeProfile(RawContactProfile rawContactProfile) throws Exception {
 		if (rawContactProfile == null) return;
 		ContentResolver contentResolver = context.getContentResolver();
@@ -93,14 +92,14 @@ public class RawContactWriteTask
 		long rawContactId = -1;
 		boolean bInsert = true;
 		operations = new ArrayList<ContentProviderOperation>(8);
-
+		
 		switch (rawContactProfile.toDo) {
 			case RawContactProfile.toReplace:
 				rawContactId = rawContactProfile.getRawContactID();
 				if (rawContactId > 0)
 				{
 					operations.add(ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI).withSelection(ContactsContract.Data.RAW_CONTACT_ID + "=?", new String[] {
-									String.valueOf(rawContactId)
+						String.valueOf(rawContactId)
 					}).build());
 					bInsert = false;
 				}
@@ -118,47 +117,33 @@ public class RawContactWriteTask
 						values.putNull(ContactsContract.RawContacts.ACCOUNT_TYPE);
 						values.putNull(ContactsContract.RawContacts.ACCOUNT_NAME);
 					}
-
+					
 					operations.add(ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI).withValues(values).build());
 				}
-
+				
 				if (rawContactProfile.name != null)
 				{
-					Builder builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI).withValue(
-									ContactsContract.Data.MIMETYPE,
-									ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE);
+					Builder builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI).withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE);
 					if (bInsert) builder.withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0);
 					else builder.withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
-					if (rawContactProfile.name[RawContactProfile.DISPLAY_NAME] != null) builder = builder.withValue(
-									ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME,
-									rawContactProfile.name[RawContactProfile.DISPLAY_NAME]);
-					if (rawContactProfile.name[RawContactProfile.PREFIX_NAME] != null) builder = builder.withValue(
-									ContactsContract.CommonDataKinds.StructuredName.PREFIX,
-									rawContactProfile.name[RawContactProfile.PREFIX_NAME]);
-					if (rawContactProfile.name[RawContactProfile.GIVEN_NAME] != null) builder = builder.withValue(
-									ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME,
-									rawContactProfile.name[RawContactProfile.GIVEN_NAME]);
-					if (rawContactProfile.name[RawContactProfile.MIDDLE_NAME] != null) builder = builder.withValue(
-									ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME,
-									rawContactProfile.name[RawContactProfile.MIDDLE_NAME]);
-					if (rawContactProfile.name[RawContactProfile.FAMILY_NAME] != null) builder = builder.withValue(
-									ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME,
-									rawContactProfile.name[RawContactProfile.FAMILY_NAME]);
-					if (rawContactProfile.name[RawContactProfile.SUFFIX_NAME] != null) builder = builder.withValue(
-									ContactsContract.CommonDataKinds.StructuredName.SUFFIX,
-									rawContactProfile.name[RawContactProfile.SUFFIX_NAME]);
+					if (rawContactProfile.name[RawContactProfile.DISPLAY_NAME] != null) builder = builder.withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, rawContactProfile.name[RawContactProfile.DISPLAY_NAME]);
+					if (rawContactProfile.name[RawContactProfile.PREFIX_NAME] != null) builder = builder.withValue(ContactsContract.CommonDataKinds.StructuredName.PREFIX, rawContactProfile.name[RawContactProfile.PREFIX_NAME]);
+					if (rawContactProfile.name[RawContactProfile.GIVEN_NAME] != null) builder = builder.withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, rawContactProfile.name[RawContactProfile.GIVEN_NAME]);
+					if (rawContactProfile.name[RawContactProfile.MIDDLE_NAME] != null) builder = builder.withValue(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME, rawContactProfile.name[RawContactProfile.MIDDLE_NAME]);
+					if (rawContactProfile.name[RawContactProfile.FAMILY_NAME] != null) builder = builder.withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, rawContactProfile.name[RawContactProfile.FAMILY_NAME]);
+					if (rawContactProfile.name[RawContactProfile.SUFFIX_NAME] != null) builder = builder.withValue(ContactsContract.CommonDataKinds.StructuredName.SUFFIX, rawContactProfile.name[RawContactProfile.SUFFIX_NAME]);
 					operations.add(builder.build());
 				}
-
+				
 				if (rawContactProfile.phones != null)
 				{
 					for (String[] phone : rawContactProfile.phones)
 					{
 						Builder builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-										.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
-										.withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone[RawContactProfile.CONTENT_INDEX])
-										.withValue(ContactsContract.CommonDataKinds.Phone.TYPE, phone[RawContactProfile.MIMETYPE_INDEX])
-										.withValue(ContactsContract.CommonDataKinds.Phone.LABEL, phone[RawContactProfile.SUB_CONTENT_INDEX]);
+						                                          .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+						                                          .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone[RawContactProfile.CONTENT_INDEX])
+						                                          .withValue(ContactsContract.CommonDataKinds.Phone.TYPE, phone[RawContactProfile.MIMETYPE_INDEX])
+						                                          .withValue(ContactsContract.CommonDataKinds.Phone.LABEL, phone[RawContactProfile.SUB_CONTENT_INDEX]);
 						if (bInsert) builder.withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0);
 						else builder.withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
 						operations.add(builder.build());
@@ -169,9 +154,9 @@ public class RawContactWriteTask
 					for (String[] address : rawContactProfile.addresses)
 					{
 						Builder builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-										.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE)
-										.withValue(ContactsContract.CommonDataKinds.StructuredPostal.TYPE, address[RawContactProfile.MIMETYPE_INDEX])
-										.withValue(ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS, address[RawContactProfile.CONTENT_INDEX]);
+						                                          .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE)
+						                                          .withValue(ContactsContract.CommonDataKinds.StructuredPostal.TYPE, address[RawContactProfile.MIMETYPE_INDEX])
+						                                          .withValue(ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS, address[RawContactProfile.CONTENT_INDEX]);
 						if (bInsert) builder.withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0);
 						else builder.withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
 						if (address[RawContactProfile.ADDRESS_LABEL] != null)
@@ -213,9 +198,7 @@ public class RawContactWriteTask
 				{
 					for (String[] org : rawContactProfile.orgs)
 					{
-						Builder builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI).withValue(
-										ContactsContract.Data.MIMETYPE,
-										ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE);
+						Builder builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI).withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE);
 						if (bInsert) builder.withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0);
 						else builder.withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
 						if (org[RawContactProfile.CONTENT_INDEX] != null) builder = builder.withValue(ContactsContract.CommonDataKinds.Organization.COMPANY, org[RawContactProfile.CONTENT_INDEX]);
@@ -227,11 +210,11 @@ public class RawContactWriteTask
 				}
 				if (rawContactProfile.birthday != null)
 				{
-
+					
 					Builder builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-									.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE)
-									.withValue(ContactsContract.CommonDataKinds.Event.START_DATE, rawContactProfile.birthday)
-									.withValue(ContactsContract.CommonDataKinds.Event.TYPE, ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY);
+					                                          .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE)
+					                                          .withValue(ContactsContract.CommonDataKinds.Event.START_DATE, rawContactProfile.birthday)
+					                                          .withValue(ContactsContract.CommonDataKinds.Event.TYPE, ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY);
 					if (bInsert) builder.withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0);
 					else builder.withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
 					operations.add(builder.build());
@@ -241,9 +224,9 @@ public class RawContactWriteTask
 					for (String[] email : rawContactProfile.emails)
 					{
 						Builder builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-										.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
-										.withValue(ContactsContract.CommonDataKinds.Email.DATA, email[RawContactProfile.CONTENT_INDEX])
-										.withValue(ContactsContract.CommonDataKinds.Email.TYPE, email[RawContactProfile.MIMETYPE_INDEX]);
+						                                          .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
+						                                          .withValue(ContactsContract.CommonDataKinds.Email.DATA, email[RawContactProfile.CONTENT_INDEX])
+						                                          .withValue(ContactsContract.CommonDataKinds.Email.TYPE, email[RawContactProfile.MIMETYPE_INDEX]);
 						if (bInsert) builder.withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0);
 						else builder.withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
 						operations.add(builder.build());
@@ -254,10 +237,7 @@ public class RawContactWriteTask
 					//这里的website API 中有类型 ，这里先不管了，都other吧				
 					for (String webUrl : rawContactProfile.webUrls)
 					{
-						Builder builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-										.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE)
-										.withValue(ContactsContract.CommonDataKinds.Website.URL, webUrl)
-										.withValue(ContactsContract.CommonDataKinds.Website.TYPE, ContactsContract.CommonDataKinds.Website.TYPE_OTHER);
+						Builder builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI).withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE).withValue(ContactsContract.CommonDataKinds.Website.URL, webUrl).withValue(ContactsContract.CommonDataKinds.Website.TYPE, ContactsContract.CommonDataKinds.Website.TYPE_OTHER);
 						if (bInsert) builder.withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0);
 						else builder.withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
 						operations.add(builder.build());
@@ -265,27 +245,21 @@ public class RawContactWriteTask
 				}
 				if (rawContactProfile.note != null)
 				{
-					Builder builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-									.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE)
-									.withValue(ContactsContract.CommonDataKinds.Note.NOTE, rawContactProfile.note);
+					Builder builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI).withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE).withValue(ContactsContract.CommonDataKinds.Note.NOTE, rawContactProfile.note);
 					if (bInsert) builder.withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0);
 					else builder.withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
 					operations.add(builder.build());
 				}
 				if (rawContactProfile.nickName != null)
 				{
-					Builder builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-									.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Nickname.CONTENT_ITEM_TYPE)
-									.withValue(ContactsContract.CommonDataKinds.Nickname.NAME, rawContactProfile.nickName);
+					Builder builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI).withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Nickname.CONTENT_ITEM_TYPE).withValue(ContactsContract.CommonDataKinds.Nickname.NAME, rawContactProfile.nickName);
 					if (bInsert) builder.withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0);
 					else builder.withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
 					operations.add(builder.build());
 				}
 				if (rawContactProfile.photoEncoded != null)
 				{
-					Builder builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-									.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
-									.withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, IoUtil.base64Decoder(rawContactProfile.photoEncoded.toCharArray(), 0));
+					Builder builder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI).withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE).withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, IoUtil.base64Decoder(rawContactProfile.photoEncoded.toCharArray(), 0));
 					if (bInsert) builder.withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0);
 					else builder.withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId);
 					operations.add(builder.build());
@@ -319,14 +293,14 @@ public class RawContactWriteTask
 					}
 				}
 				break;
-
+		
 		}
 		if (progress != null) progress.updateProgress(progressType, 1);
 	}
-
+	
 	@Override
 	public void run() throws Exception {
 		writeProfile(rawContactProfile);
 	}
-
+	
 }

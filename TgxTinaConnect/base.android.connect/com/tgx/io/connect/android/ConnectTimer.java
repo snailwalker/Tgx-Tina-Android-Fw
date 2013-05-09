@@ -45,8 +45,9 @@ public class ConnectTimer
 	
 	@Override
 	protected boolean doTimeMethod() {
-		if (feture.isConnectedOrConnecting()) return true;
-		if (feture.isTiming(this) || feture.connectTarAddr(filter, listener)) return true;
+		if (feture.isTiming(this)) return true;
+		if (feture.connectTarAddr(filter, listener)) return true;
+		if (feture.isConnectedOrConnecting()) return false;
 		if (nextConTime > 900)
 		{
 			pF0 = 1;

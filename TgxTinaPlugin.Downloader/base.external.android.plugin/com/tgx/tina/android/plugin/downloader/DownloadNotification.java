@@ -1,17 +1,17 @@
 /*******************************************************************************
  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  *******************************************************************************/
 package com.tgx.tina.android.plugin.downloader;
 
@@ -20,6 +20,7 @@ import java.util.HashMap;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+
 
 /**
  * This class handles the updating of the Notification Manager for the cases
@@ -30,23 +31,15 @@ import android.content.Intent;
  */
 class DownloadNotification
 {
-
-	Context								mContext;
-	public NotificationManager			mNotificationMgr;
-	HashMap<String, NotificationItem>	mNotifications;
-
-	static final String					LOGTAG			= "DownloadNotification";
-	static final String					WHERE_RUNNING	=
-															"(" + GlobalDownload.COLUMN_STATUS + " >= '100') AND (" +
-																			GlobalDownload.COLUMN_STATUS + " <= '199') AND (" +
-																			GlobalDownload.COLUMN_VISIBILITY + " IS NULL OR " +
-																			GlobalDownload.COLUMN_VISIBILITY + " == '" + GlobalDownload.VISIBILITY_VISIBLE + "' OR " +
-																			GlobalDownload.COLUMN_VISIBILITY +
-																			" == '" + GlobalDownload.VISIBILITY_VISIBLE_NOTIFY_COMPLETED + "')";
-	static final String					WHERE_COMPLETED	=
-															GlobalDownload.COLUMN_STATUS + " >= '200' AND " +
-																			GlobalDownload.COLUMN_VISIBILITY + " == '" + GlobalDownload.VISIBILITY_VISIBLE_NOTIFY_COMPLETED + "'";
-
+	
+	Context                           mContext;
+	public NotificationManager        mNotificationMgr;
+	HashMap<String, NotificationItem> mNotifications;
+	
+	static final String               LOGTAG          = "DownloadNotification";
+	static final String               WHERE_RUNNING   = "(" + GlobalDownload.COLUMN_STATUS + " >= '100') AND (" + GlobalDownload.COLUMN_STATUS + " <= '199') AND (" + GlobalDownload.COLUMN_VISIBILITY + " IS NULL OR " + GlobalDownload.COLUMN_VISIBILITY + " == '" + GlobalDownload.VISIBILITY_VISIBLE + "' OR " + GlobalDownload.COLUMN_VISIBILITY + " == '" + GlobalDownload.VISIBILITY_VISIBLE_NOTIFY_COMPLETED + "')";
+	static final String               WHERE_COMPLETED = GlobalDownload.COLUMN_STATUS + " >= '200' AND " + GlobalDownload.COLUMN_VISIBILITY + " == '" + GlobalDownload.VISIBILITY_VISIBLE_NOTIFY_COMPLETED + "'";
+	
 	/**
 	 * This inner class is used to collate downloads that are owned by the same
 	 * application. This is so that only one notification line item is used for
@@ -55,14 +48,14 @@ class DownloadNotification
 	 */
 	static class NotificationItem
 	{
-		int			mId;								// This first db _id for the download for the app
-		int			mTotalCurrent	= 0;
-		int			mTotalTotal		= 0;
-		int			mTitleCount		= 0;
-		String		mPackageName;						// App package name
-		String		mDescription;
-		String[]	mTitles			= new String[2];	// download titles.
-
+		int      mId;                          // This first db _id for the download for the app
+		int      mTotalCurrent = 0;
+		int      mTotalTotal   = 0;
+		int      mTitleCount   = 0;
+		String   mPackageName;                 // App package name
+		String   mDescription;
+		String[] mTitles       = new String[2];	// download titles.
+		                                        
 		/*
 		 * Add a second download to this notification item.
 		 */
@@ -83,7 +76,7 @@ class DownloadNotification
 			mTitleCount++;
 		}
 	}
-
+	
 	/**
 	 * Constructor
 	 * 
@@ -91,14 +84,12 @@ class DownloadNotification
 	 *            The context to use to obtain access to the Notification
 	 *            Service
 	 */
-	DownloadNotification(Context ctx)
-	{
+	DownloadNotification(Context ctx) {
 		mContext = ctx;
-		mNotificationMgr = (NotificationManager) mContext
-						.getSystemService(Context.NOTIFICATION_SERVICE);
+		mNotificationMgr = (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
 		mNotifications = new HashMap<String, NotificationItem>();
 	}
-
+	
 	/*
 	 * Update the notification ui.
 	 */
@@ -110,7 +101,7 @@ class DownloadNotification
 		//        updateActiveNotification();
 		//        updateCompletedNotification();
 	}
-
+	
 	//    private void updateActiveNotification() {
 	//        // Active downloads
 	//        Cursor c = mContext.getContentResolver().query(
@@ -202,7 +193,7 @@ class DownloadNotification
 	//            
 	//        }
 	//    }
-
+	
 	//    private void updateCompletedNotification() {
 	//        // Completed downloads
 	//        Cursor c = mContext.getContentResolver().query(
@@ -282,7 +273,7 @@ class DownloadNotification
 	//        }
 	//        c.close();
 	//    }
-
+	
 	/*
 	 * Helper function to build the downloading text.
 	 */
@@ -296,5 +287,5 @@ class DownloadNotification
 	//        sb.append('%');
 	//        return sb.toString();
 	//    }
-
+	
 }

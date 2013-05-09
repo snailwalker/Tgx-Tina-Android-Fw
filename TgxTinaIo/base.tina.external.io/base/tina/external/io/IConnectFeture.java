@@ -32,7 +32,8 @@ public interface IConnectFeture<T extends TimerTask>
 	 * 
 	 * @param ioFilter
 	 * @param listener
-	 * @return true:change state to connecting;false:network is not connected!
+	 * @return true: no more connect; false:continue wait next connect or
+	 *         connect result
 	 */
 	public boolean connectTarAddr(IoFilter ioFilter, ITaskListener listener);
 	

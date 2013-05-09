@@ -1,19 +1,19 @@
- /*******************************************************************************
-  * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
-  *
-  * Licensed under the Apache License, Version 2.0 (the "License");
-  * you may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at
-  *
-  * http://www.apache.org/licenses/LICENSE-2.0
-  *
-  * Unless required by applicable law or agreed to in writing, software
-  * distributed under the License is distributed on an "AS IS" BASIS,
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  *******************************************************************************/
- package base.tina.external.io.net.socket;
+/*******************************************************************************
+ * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ *******************************************************************************/
+package base.tina.external.io.net.socket;
 
 import java.net.SocketTimeoutException;
 import java.nio.channels.SelectionKey;
@@ -27,36 +27,36 @@ import base.tina.external.io.IoFilter;
 import base.tina.external.io.IoSession;
 import base.tina.external.io.IoTask;
 
-public class CSocketTask
-		extends
-		IoTask<NioSocketICon>
-		implements
-		ISelectorX
-{
-	public final static int	SerialNum	= SocketTask.SerialNum + 1;
-	Selector				selector;
-	NioSocketICon			connection;
-	volatile boolean		disConnect;
-	final long				cTimeout	= TimeUnit.SECONDS.toMillis(60);
-	volatile boolean		finishConnect;
 
-	public CSocketTask(String url, IoFilter ioFilter)
-	{
+public class CSocketTask
+        extends
+        IoTask<NioSocketICon>
+        implements
+        ISelectorX
+{
+	public final static int SerialNum = SocketTask.SerialNum + 1;
+	Selector                selector;
+	NioSocketICon           connection;
+	volatile boolean        disConnect;
+	final long              cTimeout  = TimeUnit.SECONDS.toMillis(60);
+	volatile boolean        finishConnect;
+	
+	public CSocketTask(String url, IoFilter ioFilter) {
 		super(0, url, ioFilter);
 	}
-
+	
 	@Override
 	public final int getSerialNum() {
 		return SerialNum;
 	}
-
+	
 	@Override
 	public final void initTask() {
 		super.initTask();
 		isBloker = true;
 		isProxy = true;
 	}
-
+	
 	@Override
 	public final void run() throws Exception {
 		selector = Selector.open();
@@ -84,8 +84,7 @@ public class CSocketTask
 						connection.finishConnect();
 						LSocketTask lSocketTask = LSocketTask.open();
 						lSocketTask.exchangeSelector(this);
-						if (!lSocketTask.isInit() && !scheduleService.requestService(lSocketTask, true, getListenSerial())) throw new IllegalStateException(
-								"LSocketTask is invalid");
+						if (!lSocketTask.isInit() && !scheduleService.requestService(lSocketTask, true, getListenSerial())) throw new IllegalStateException("LSocketTask is invalid");
 						commitResult(ioSession, CommitAction.WAKE_UP);
 					}
 				}
@@ -93,7 +92,7 @@ public class CSocketTask
 		}
 		else throw new SocketTimeoutException();
 	}
-
+	
 	@Override
 	public final void dispose() {
 		// 由于Exception 跳出时未生成IoSession 所以只需要清理IoConnection即可
@@ -118,12 +117,12 @@ public class CSocketTask
 		selector = null;
 		super.dispose();
 	}
-
+	
 	@Override
 	public final Selector getSelector() {
 		return selector;
 	}
-
+	
 	@Override
 	public final void wakeUp() {
 		if (selector != null && selector.isOpen()) selector.wakeup();
