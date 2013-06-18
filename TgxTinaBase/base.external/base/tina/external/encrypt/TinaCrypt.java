@@ -15,8 +15,10 @@
  *******************************************************************************/
 package base.tina.external.encrypt;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 
 public class TinaCrypt
@@ -64,25 +66,70 @@ public class TinaCrypt
 		return new byte[getVlsize()];
 	}
 	
-	public String getMD5Str(byte[] in) {
+	private static final char HEX_DIGITS[] = {
+	        '0',
+	        '1',
+	        '2',
+	        '3',
+	        '4',
+	        '5',
+	        '6',
+	        '7',
+	        '8',
+	        '9',
+	        'A',
+	        'B',
+	        'C',
+	        'D',
+	        'E',
+	        'F'
+	                                       };
+	
+	private static String toHexString(byte[] b) {
+		StringBuilder sb = new StringBuilder(b.length * 2);
+		for (int i = 0; i < b.length; i++)
+		{
+			sb.append(HEX_DIGITS[(b[i] & 0xf0) >>> 4]);
+			sb.append(HEX_DIGITS[b[i] & 0x0f]);
+		}
+		return sb.toString();
+	}
+	
+	public static String md5(File file) {
+		InputStream fis;
+		byte[] buffer = new byte[1024];
+		int numRead = 0;
+		MessageDigest md5;
 		try
 		{
-			MessageDigest MD5Digest = MessageDigest.getInstance("MD5");
-			byte[] strB = MD5Digest.digest(in);
-			String x = "";
-			for (byte b : strB)
+			fis = new FileInputStream(file);
+			md5 = MessageDigest.getInstance("MD5");
+			while ((numRead = fis.read(buffer)) > 0)
 			{
-				String c = Integer.toHexString(b & 0xFF);
-				if (c.length() < 2) x += '0';
-				x += c;
+				md5.update(buffer, 0, numRead);
 			}
-			return x;
+			fis.close();
+			return toHexString(md5.digest());
 		}
-		catch (NoSuchAlgorithmException e)
+		catch (Exception e)
 		{
-			e.printStackTrace();
+			return null;
 		}
-		return null;
+	}
+	
+	public static String md5(byte[] in) {
+		if (in == null) throw new NullPointerException();
+		MessageDigest md5;
+		try
+		{
+			md5 = MessageDigest.getInstance("MD5");
+			md5.update(in, 0, in.length);
+			return toHexString(md5.digest());
+		}
+		catch (Exception e)
+		{
+			return null;
+		}
 	}
 	
 	public final static int adler32(byte[] buf, int off, int len) {

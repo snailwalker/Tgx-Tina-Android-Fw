@@ -28,8 +28,6 @@ public final class GlobalDownload
 	//$	public final static String	AUTHORITY	= "/*$AUTHORITY$*/";
 	//#else
 	public final static String AUTHORITY = "TGX_DOWNLOADER.PROVIDER_AUTHORITY";
-	
-	//public final static String   AUTHORITY   = "com.tgx.pullsdk.PROVIDER_AUTHORITY";
 	//#endif
 	
 	private GlobalDownload() {

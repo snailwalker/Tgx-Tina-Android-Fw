@@ -331,21 +331,40 @@ public final class IoUtil
 	
 	public final static String quoted_print_Encoding(String src, String charSet) {
 		if (src == null || src.equals("")) return null;
+		int maxLine = 76;
 		try
 		{
 			byte[] encodeData = src.getBytes(charSet);
 			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-			for (int i = 0; i < encodeData.length; i++)
+			char[] charArry;
+			for (int i = 0, l = 0; i < encodeData.length; i++)
 			{
-				if (encodeData[i] >= 0) buffer.write(encodeData[i]);
+				
+				if (encodeData[i] >= '!' && encodeData[i] <= '~' && encodeData[i] != '=')
+				{
+					if (l == maxLine)
+					{
+						buffer.write("=\r\n".getBytes());
+						l = 0;
+					}
+					buffer.write(encodeData[i]);
+					l++;
+				}
 				else
 				{
+					if (l > maxLine - 3)
+					{
+						buffer.write("=\r\n".getBytes());
+						l = 0;
+					}
 					buffer.write('=');
-					char[] charArry = Integer.toHexString(encodeData[i] & 0xFF).toUpperCase().toCharArray();
-					for (int j = 0; j < charArry.length; j++)
-						buffer.write(charArry[j]);
-					charArry = null;
+					charArry = Integer.toHexString(encodeData[i] & 0xFF).toUpperCase().toCharArray();
+					if (charArry.length < 2) buffer.write('0');
+					for (char c : charArry)
+						buffer.write(c);
+					l += 3;
 				}
+				
 			}
 			buffer.flush();
 			encodeData = null;
@@ -372,11 +391,25 @@ public final class IoUtil
 		int length = src.length();
 		try
 		{
+			boolean canIntParse;
+			String encode;
+			int wr;
 			for (int i = 0, k; i < length;)
 			{
 				k = i + 1;
-				boolean canIntParse = src.charAt(i) != '=' ? false : true;
-				baos.write(canIntParse ? Integer.parseInt(src.substring(k, i += 3), 16) : src.charAt(i++));
+				canIntParse = src.charAt(i) == '=';
+				if (canIntParse)
+				{
+					encode = src.substring(k, i += 3);
+					if (encode.equals("\r\n") || encode.equals("\n")) continue;
+					wr = Integer.parseInt(encode, 16);
+				}
+				else
+				{
+					wr = src.charAt(i++);
+					if (wr < '!' || wr > '~') continue;
+				}
+				baos.write(wr);
 			}
 			baos.flush();
 			return new String(baos.toByteArray(), charSet);

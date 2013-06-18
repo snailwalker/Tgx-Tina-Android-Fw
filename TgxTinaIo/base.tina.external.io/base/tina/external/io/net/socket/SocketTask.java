@@ -59,7 +59,7 @@ public class SocketTask
 			if (ioSession.disconnect.get()) throw new ClosedChannelException();
 			LSocketTask lSocketTask = LSocketTask.open();
 			lSocketTask.offerWrite(this);
-			if (!lSocketTask.isInit() && !scheduleService.requestService(lSocketTask, true, getListenSerial())) throw new IllegalStateException("LSocketTask is invalid");
+			if (!lSocketTask.isInit() && !scheduleService.requestService(lSocketTask, true, 0)) throw new IllegalStateException("LSocketTask is invalid");
 			else lSocketTask.wakeUp();
 		}
 		else

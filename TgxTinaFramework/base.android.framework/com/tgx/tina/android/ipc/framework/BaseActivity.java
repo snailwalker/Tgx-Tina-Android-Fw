@@ -27,7 +27,7 @@ public abstract class BaseActivity
         extends
         Activity
 {
-	public ATaskService ioAService;
+	public ATaskService mAService;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +35,7 @@ public abstract class BaseActivity
 		//#ifdef debug
 		//#if MULTI_ACTIVITY
 		//#else
-		com.tgx.tina.android.log.AndroidPrinter.createByActivity(this);
+		//$com.tgx.tina.android.log.AndroidPrinter.createByActivity(this);
 		//#endif 
 		//#endif 
 	}
@@ -46,8 +46,8 @@ public abstract class BaseActivity
 		super.onDestroy();
 		//#if MULTI_ACTIVITY
 		//#else
-		if (ioAService != null) ioAService.stopAService();
-		System.exit(0);
+		//$if (ioAService != null) ioAService.stopAService();
+		//$System.exit(0);
 		//#endif
 	}
 	

@@ -46,7 +46,7 @@ public interface ILogPrinter
 	
 	public void e(String tag, String msg, Throwable throwable);
 	
-	public static enum LEVEL {
+	public static enum Level {
 		VERBOSE, DEBUG, INFO, WARN, ERROR, ASSERT, FATAL, UI, SILENT
 	}
 }

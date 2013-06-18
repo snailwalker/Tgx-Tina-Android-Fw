@@ -1,11 +1,9 @@
 package com.tgx.tina.android.ipc.framework;
 
-import base.tina.core.log.ILogPrinter.LEVEL;
+import android.app.Application;
 
 import com.tgx.tina.android.log.AndroidPrinter;
 import com.tgx.tina.android.task.ATaskService;
-
-import android.app.Application;
 
 
 public abstract class BaseApp<T extends BaseBridge>
@@ -14,18 +12,13 @@ public abstract class BaseApp<T extends BaseBridge>
         implements
         IBridge<T>
 {
-	//#ifdef debug
-	LEVEL                lv = LEVEL.WARN;
-	//#else
-	//$LEVEL lv = LEVEL.WARN;
-	//#endif
 	private T            bridge;
 	private ATaskService mAService;
 	
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		AndroidPrinter.createByApp(getApplicationContext(), lv);
+		AndroidPrinter.createByApp(getApplicationContext());
 		bridge = bindBridge(getApplicationContext());
 		mAService = isServiceRemote() ? new ATaskService() : BaseService.getInstance().mAService;
 	}
@@ -47,5 +40,4 @@ public abstract class BaseApp<T extends BaseBridge>
 	public final T getBridge() {
 		return bridge;
 	}
-	
 }

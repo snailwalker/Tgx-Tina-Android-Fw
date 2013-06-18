@@ -36,8 +36,8 @@ public abstract class RemoteActivity<T extends BaseBridge>
 		if (mBridge == null) throw new NullPointerException();
 		if (isServiceRemote())
 		{
-			ioAService = new ATaskService();
-			ioAService.startAService(this);
+			mAService = new ATaskService();
+			mAService.startAService(this);
 		}
 		if (isInCreateBind()) mBridge.startBind(remoteBootAction());
 	}
@@ -54,6 +54,8 @@ public abstract class RemoteActivity<T extends BaseBridge>
 		RemoteService rServiceStub = mBridge.getRemoteService();
 		if (rServiceStub != null)
 		{
+			//#debug verbose
+			base.tina.core.log.LogPrinter.v(null, "Bridge remote onNoAction-");
 			try
 			{
 				rServiceStub.onNoAction(mBridge.tarAction());

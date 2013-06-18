@@ -208,15 +208,17 @@ public abstract class Task
 		if (isInQueue()) //不必判断ScheduleQueue的NULL
 		{
 			
-			//#debug
-			base.tina.core.log.LogPrinter.d(null, "old offime :" + offTime);
 			offTime = System.currentTimeMillis() + TimeUnit.MILLISECONDS.convert(duration, timeUnit) - doTime;
 			invalid();
+			//#debug
+			base.tina.core.log.LogPrinter.d(null, "old offime :" + offTime);
 		}
 		else
 		// 尚未进入调度系统
 		{
 			doTime = System.currentTimeMillis() + TimeUnit.MILLISECONDS.convert(duration, timeUnit);
+			//#debug
+			base.tina.core.log.LogPrinter.d(null, "new dotime :" + doTime);
 		}
 	}
 	

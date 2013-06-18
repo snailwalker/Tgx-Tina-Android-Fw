@@ -33,6 +33,7 @@ public abstract class ContactTask
 	protected final static int RawContactReadAllTaskSN    = RawContactReadTaskSN + 1;
 	protected final static int RawContactWriteTaskSN      = RawContactReadAllTaskSN + 1;
 	protected final static int RawContactBatchWriteTaskSN = RawContactWriteTaskSN + 1;
+	protected final static int ReadSimContactTaskSN       = RawContactBatchWriteTaskSN + 1;
 	
 	protected Context          context;
 	

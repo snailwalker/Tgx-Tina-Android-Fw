@@ -128,8 +128,8 @@ public final class NioSocketICon
 		SocketChannel socketChannel = SocketChannel.open();
 		socketChannel.configureBlocking(false);
 		Socket socket = socketChannel.socket();
-		socket.setTcpNoDelay(false);
-		socket.setSoLinger(true, 1);
+		socket.setTcpNoDelay(true);//http://www.ietf.org/rfc/rfc896.txt
+		socket.setSoLinger(true, 1);//当close的时候 1秒钟之后未发送成功的数据将被丢弃
 		//#debug 
 		base.tina.core.log.LogPrinter.d(null, "sokcet otption:R-" + socket.getReceiveBufferSize() + " :S-" + socket.getSendBufferSize() + " :T-" + socket.getSoTimeout());
 		return socketChannel;

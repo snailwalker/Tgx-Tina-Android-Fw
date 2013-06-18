@@ -1,2 +1,2 @@
-debug=1
-LOG_TAG="TINA_LOG"
+LOG_TAG="Tina_log"
+check_bind_serial=false

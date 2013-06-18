@@ -21,8 +21,8 @@ import java.util.concurrent.TimeUnit;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.telephony.SmsMessage;
 import android.telephony.TelephonyManager;
+import android.text.TextUtils;
 import android.util.SparseArray;
 
 import com.tgx.tina.android.plugin.massage.sms.SmsContentObserver;
@@ -31,6 +31,9 @@ import com.tgx.tina.android.plugin.massage.sms.SmsMsgPack;
 
 public class SmsInterceptUtil
 {
+	
+	final static String tag = "sms";
+	
 	public final static void onReceive(Context context, Intent intent, IMsgGather msgGather) {
 		onReceiveSMS(context, intent, msgGather);
 	}
@@ -82,30 +85,50 @@ public class SmsInterceptUtil
 	}
 	
 	static void onReceiveSMS(Context context, Intent intent, IMsgGather msgGather) {
-		System.out.println("====onReceiveSMS=11=====");
+		//#debug
+		base.tina.core.log.LogPrinter.d(tag, "~~~SMS~~~");
 		Object[] objects = (Object[]) (intent.getExtras().get("pdus"));
+		String from = intent.getExtras().getString("from");
+		if (TextUtils.isEmpty(from) && intent.getExtras().containsKey("format"))
+		{
+			String format = intent.getExtras().getString("format");
+			if (format.equalsIgnoreCase("3gpp"))
+			{
+				from = "GSM";
+			}
+			else if (format.equalsIgnoreCase("3gpp2"))
+			{
+				from = "CDMA";
+			}
+		}
+		
+		if (TextUtils.isEmpty(from))
+		{
+			TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+			from = tm.getPhoneType() == TelephonyManager.PHONE_TYPE_CDMA ? "CDMA" : "GSM";
+		}
+		//#debug
+		base.tina.core.log.LogPrinter.d(tag, "~~~from~~~" + from);
 		byte[] pdu, userData;
 		int tp_udl, tp_sign;
-		TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-		int activePhone = tm.getPhoneType();
 		SparseArray<SMS_MULTI_MSG> toPackMsgs = new SparseArray<SMS_MULTI_MSG>();
 		PDUS:
 		for (Object obj : objects)
 		{
 			pdu = (byte[]) obj;
-			SmsMessage smsMessage = SmsMessage.createFromPdu(pdu);
+			TgxSmsMessage smsMessage = TgxSmsMessage.createFromPdu(pdu, from);
 			String address = smsMessage.getDisplayOriginatingAddress();
 			String content = smsMessage.getDisplayMessageBody();
 			long timeStamp = smsMessage.getTimestampMillis();
+			userData = smsMessage.getUserData();
 			//CDMA
-			if (TelephonyManager.PHONE_TYPE_CDMA == activePhone)
+			if (from.equalsIgnoreCase("CDMA"))
 			{
-				userData = smsMessage.getUserData();
 				
 				if ((userData[0] & 0xFF) == 0x05 && (userData[1] & 0xFF) == 0x00)
 				{
 					//#debug
-					base.tina.core.log.LogPrinter.d(null, "cdma长短信需要拼接~~~~~~");
+					base.tina.core.log.LogPrinter.d(tag, "cdma长短信需要拼接~~~~~~");
 					SMS_MULTI_MSG multiMsg;
 					
 					tp_sign = userData[3];
@@ -125,19 +148,19 @@ public class SmsInterceptUtil
 					int index = userData[5] & 0xFF;
 					
 					//#debug
-					base.tina.core.log.LogPrinter.d(null, "[cdma long SMS] part index: " + index + " O:" + userData[5]);
+					base.tina.core.log.LogPrinter.d(tag, "[cdma long SMS] part index: " + index + " O:" + userData[5]);
 					
 					if (index < 0 || index > multiMsg.parts.length)
 					{
 						//#debug warn
-						base.tina.core.log.LogPrinter.w(null, "[cdma long SMS] part error:index");
+						base.tina.core.log.LogPrinter.w(tag, "[cdma long SMS] part error:index");
 						continue PDUS;
 					}
 					index--;
 					multiMsg.parts[index] = new SMS_MULTI_PARTS();
-					multiMsg.parts[index].phone = smsMessage.getDisplayOriginatingAddress();
-					multiMsg.parts[index].content = smsMessage.getDisplayMessageBody();
-					multiMsg.parts[index].timeStamp = smsMessage.getTimestampMillis();
+					multiMsg.parts[index].phone = address;
+					multiMsg.parts[index].content = content;
+					multiMsg.parts[index].timeStamp = timeStamp;
 					
 					boolean receiveAll = true;
 					for (SMS_MULTI_PARTS sms_part : multiMsg.parts)
@@ -173,8 +196,8 @@ public class SmsInterceptUtil
 					messagePack.address = address;
 					messagePack.content = content;
 					
-					// #debug
-					base.tina.core.log.LogPrinter.d(null, "cdma smsMessage.getIndexOnIcc : " + smsMessage.getIndexOnIcc());
+					//#debug
+					base.tina.core.log.LogPrinter.d(tag, "cdma smsMessage.getIndexOnIcc : ");
 					
 					if (timeStamp > 0) messagePack.timeStamp = new Date(timeStamp);
 					
@@ -185,9 +208,10 @@ public class SmsInterceptUtil
 			else
 			{
 				//GSM  
-				userData = smsMessage.getUserData();
-				tp_udl = pdu[pdu.length - userData.length - 1] & 0xFF;
-				if (tp_udl == userData.length)
+				tp_udl = pdu[pdu.length - 1 - userData.length] & 0xFF;
+				//#debug
+				base.tina.core.log.LogPrinter.d(tag, "tp_udl: " + tp_udl + " userData.length:" + userData.length);
+				if (tp_udl == userData.length || (tp_udl > userData.length && (tp_udl * 7) >>> 3 == userData.length))
 				{
 					SmsMsgPack messagePack = new SmsMsgPack();
 					messagePack.state = SmsMsgPack.LOCAL_RECEIVE;
@@ -195,7 +219,7 @@ public class SmsInterceptUtil
 					messagePack.content = content;
 					
 					//#debug 
-					base.tina.core.log.LogPrinter.d(null, "<%%%%%%%> smsMessage.getIndexOnIcc : " + smsMessage.getIndexOnIcc());
+					base.tina.core.log.LogPrinter.d(tag, "<%%%%%%%> smsMessage.getIndexOnIcc : ");
 					
 					if (timeStamp > 0) messagePack.timeStamp = new Date(timeStamp);
 					
@@ -205,7 +229,7 @@ public class SmsInterceptUtil
 				else
 				{
 					//#debug
-					base.tina.core.log.LogPrinter.d(null, "长短信需要拼接~~~~~~");
+					base.tina.core.log.LogPrinter.d(tag, "长短信需要拼接~~~~~~");
 					SMS_MULTI_MSG multiMsg;
 					
 					tp_udl = pdu[pdu.length - 1 - userData.length - 6] & 0xFF;
@@ -226,17 +250,17 @@ public class SmsInterceptUtil
 					else multiMsg = toPackMsgs.get(tp_sign);
 					int index = pdu[pdu.length - 1 - userData.length] - 1;
 					//#debug
-					base.tina.core.log.LogPrinter.d(null, "[long SMS] part index: " + index);
+					base.tina.core.log.LogPrinter.d(tag, "[long SMS] part index: " + index);
 					if (index < 0 || index >= multiMsg.parts.length)
 					{
 						//#debug warn
-						base.tina.core.log.LogPrinter.w(null, "[long SMS] part error:index");
+						base.tina.core.log.LogPrinter.w(tag, "[long SMS] part error:index");
 						continue PDUS;
 					}
 					multiMsg.parts[index] = new SMS_MULTI_PARTS();
-					multiMsg.parts[index].phone = smsMessage.getDisplayOriginatingAddress();
-					multiMsg.parts[index].content = smsMessage.getDisplayMessageBody();
-					multiMsg.parts[index].timeStamp = smsMessage.getTimestampMillis();
+					multiMsg.parts[index].phone = address;
+					multiMsg.parts[index].content = content;
+					multiMsg.parts[index].timeStamp = timeStamp;
 					
 					boolean receiveAll = true;
 					for (SMS_MULTI_PARTS sms_part : multiMsg.parts)

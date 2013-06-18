@@ -25,17 +25,17 @@ public class TestAndroidPrinter
 			
 			@Override
 			public void run() {
-				try
-				{
-					Thread.sleep(1100);
-					throw new RuntimeException("~~~~~");
-				}
-				catch (InterruptedException e)
-				{
-					e.printStackTrace();
-				}
+				for (;;)
+					try
+					{
+						Thread.sleep(1100);
+						System.out.println("-!-");
+					}
+					catch (InterruptedException e)
+					{
+						e.printStackTrace();
+					}
 			}
 		}).start();
-		//		
 	}
 }

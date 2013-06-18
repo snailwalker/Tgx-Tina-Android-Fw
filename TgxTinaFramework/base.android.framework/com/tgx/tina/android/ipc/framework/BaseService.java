@@ -97,7 +97,7 @@ public abstract class BaseService
 	protected abstract void bindOthers(String jsonArg);
 	
 	@Override
-	public final IBinder onBind(Intent intent) {
+	public IBinder onBind(Intent intent) {
 		if (mAService == null) throw new RuntimeException("ATaskService isn't start!");
 		return remoteBinder;
 	}

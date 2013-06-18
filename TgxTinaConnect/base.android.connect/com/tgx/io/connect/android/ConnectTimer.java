@@ -1,11 +1,8 @@
 package com.tgx.io.connect.android;
 
-import java.util.concurrent.TimeUnit;
-
-import base.tina.core.task.infc.ITaskListener;
 import base.tina.core.task.timer.TimerTask;
-import base.tina.external.io.IConnectFeture;
 import base.tina.external.io.IoFilter;
+import base.tina.external.io.net.socket.SocketFeture;
 
 
 public class ConnectTimer
@@ -13,27 +10,20 @@ public class ConnectTimer
         TimerTask
 {
 	
-	private int                          pF0         = 1;
-	private int                          pF1         = 2;
-	private int                          nextConTime = pF0 + pF1;
-	private IConnectFeture<ConnectTimer> feture;
-	private IoFilter                     filter;
-	private ITaskListener                listener;
+	private SocketFeture feture;
+	private IoFilter     filter;
 	
 	@Override
 	public void dispose() {
-		feture = null;
 		filter = null;
 		feture = null;
 		super.dispose();
 	}
 	
-	public ConnectTimer(IConnectFeture<ConnectTimer> feture, IoFilter filter, ITaskListener listener) {
-		super(3);
-		if (feture == null) throw new NullPointerException();
+	public ConnectTimer(SocketFeture feture, IoFilter filter) {
+		super(feture.getNextDelay());//隐含了feture不为null；
 		this.feture = feture;
 		this.filter = filter;
-		this.listener = listener;
 	}
 	
 	@Override
@@ -45,24 +35,11 @@ public class ConnectTimer
 	
 	@Override
 	protected boolean doTimeMethod() {
-		if (feture.isTiming(this)) return true;
-		if (feture.connectTarAddr(filter, listener)) return true;
-		if (feture.isConnectedOrConnecting()) return false;
-		if (nextConTime > 900)
-		{
-			pF0 = 1;
-			pF1 = 2;
-			nextConTime = 901;
-		}
-		else
-		{
-			nextConTime = pF0 + pF1;
-			pF0 = pF1;
-			pF1 = nextConTime;
-		}
-		setWaitTime(TimeUnit.SECONDS.toMillis(nextConTime));
 		//#debug
-		base.tina.core.log.LogPrinter.d(null, "Connect Next:" + nextConTime + "|Sec|");
+		base.tina.core.log.LogPrinter.d(ConnectionService.TAG, "feture: " + feture.getClass().getSimpleName() + "@" + Integer.toHexString(feture.hashCode()) + " |" + (feture.isEnable() ? "connect: " + feture.isConnectedOrConnecting() : "feture closed") + " network ok: " + ConnectionService.networkOk);
+		if (!feture.isEnable() || feture.isConnectedOrConnecting() || !ConnectionService.networkOk || feture.single()) return true;//网路确认为失败或者已经开始连接将取消当前过程
+		feture.onTimer(this);//当此次定时器生效时，取消由于递增效应而滞后历史定时器
+		feture.connect(filter, feture);
 		return false;
 	}
 }

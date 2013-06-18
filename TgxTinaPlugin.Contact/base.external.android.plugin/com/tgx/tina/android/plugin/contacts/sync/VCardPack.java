@@ -16,23 +16,27 @@
 package com.tgx.tina.android.plugin.contacts.sync;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import com.tgx.tina.android.plugin.contacts.base.ContactTask;
-import com.tgx.tina.android.plugin.contacts.base.ProfilePack;
-
 import android.content.Context;
 import base.tina.core.task.AbstractResult;
+import base.tina.external.io.IoUtil;
+
+import com.tgx.tina.android.plugin.contacts.base.ContactTask;
+import com.tgx.tina.android.plugin.contacts.base.ProfilePack;
 
 
 public class VCardPack
         extends
         AbstractResult
 {
+	public VCardPack(boolean itemizeDump) {
+		this.itemizeDump = itemizeDump;
+	}
+	
 	public final static int SerialNum = ProfilePack.SerialNum - 1;
 	
 	@Override
@@ -45,7 +49,6 @@ public class VCardPack
 	public void addProfileVCard(String vCard) {
 		vCards.add(vCard);
 		storage += vCard.getBytes().length + 4;
-		indexNum++;
 	}
 	
 	@Override
@@ -54,30 +57,32 @@ public class VCardPack
 		vCards = null;
 		skip = 0;
 		availale = 0;
+		storage = 0;
 		super.dispose();
 	}
 	
 	public final void dumpTofile(FileOutputStream os) throws IOException {
 		if (vCards.isEmpty()) return;
 		String str = null;
-		DataOutputStream dos = new DataOutputStream(os);
+		byte[] lengthX = new byte[4];
 		for (Iterator<String> iterator = vCards.iterator(); iterator.hasNext();)
 		{
 			str = iterator.next();
 			byte[] strX = str.getBytes();
-			dos.writeInt(strX.length);
-			dos.write(strX);
+			IoUtil.writeInt(strX.length, lengthX, 0);
+			os.write(lengthX);
+			os.write(strX);
 			storage -= strX.length + 4;
 			iterator.remove();
-			indexNum--;
 		}
+		os.flush();
 	}
 	
-	private int storage, storageLimit = 0x40000;	//256K
-	public int  indexNum;
-	
+	private int storage;
+	public final static int maxSize = 150, storageLimit = 0x40000; //256K
+	        
 	public final boolean needDump() {
-		return storage >= storageLimit;
+		return itemizeDump || storage >= storageLimit;
 	}
 	
 	public final int availableToWrite() {
@@ -115,13 +120,15 @@ public class VCardPack
 		WRITE_COMPLETE, TO_WRITE, READ_COMPLETE, TO_READ
 	}
 	
-	private Status name;
+	private Status state;
 	
 	public final Status getStatus() {
-		return name;
+		return state;
 	}
 	
 	public final void setStatus(Status status) {
-		name = status;
+		state = status;
 	}
+	
+	private final boolean itemizeDump;
 }

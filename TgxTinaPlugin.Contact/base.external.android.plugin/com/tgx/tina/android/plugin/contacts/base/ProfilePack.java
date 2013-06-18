@@ -52,7 +52,7 @@ public abstract class ProfilePack<T extends Profile>
 	}
 	
 	public final void addProfile(T profile) {
-		profiles.add(profile);
+		if (profile != null) profiles.add(profile);
 	}
 	
 	public Collection<T> profiles;

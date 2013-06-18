@@ -84,7 +84,7 @@ public class CSocketTask
 						connection.finishConnect();
 						LSocketTask lSocketTask = LSocketTask.open();
 						lSocketTask.exchangeSelector(this);
-						if (!lSocketTask.isInit() && !scheduleService.requestService(lSocketTask, true, getListenSerial())) throw new IllegalStateException("LSocketTask is invalid");
+						if (!lSocketTask.isInit() && !scheduleService.requestService(lSocketTask, true, 0)) throw new IllegalStateException("LSocketTask is invalid");
 						commitResult(ioSession, CommitAction.WAKE_UP);
 					}
 				}

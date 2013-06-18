@@ -15,6 +15,11 @@
  *******************************************************************************/
 package base.tina.core.log;
 
+import java.io.IOException;
+
+import base.tina.core.log.ILogPrinter.Level;
+
+
 public class LogPrinter
 {
 	private static ILogPrinter  iLogPrinter;
@@ -32,89 +37,92 @@ public class LogPrinter
 	public final static void v(String tag, String msg) {
 		if (tag == null || "".equals(tag.trim())) tag = TGX_TAG;
 		if (iLogPrinter != null) iLogPrinter.v(tag, msg);
-		println(tag, AbstractLogSetting.verbose, msg, null);
+		println(tag, Level.VERBOSE, msg, null);
 	}
 	
 	public final static void v(String tag, String msg, Throwable throwable) {
 		if (tag == null || "".equals(tag.trim())) tag = TGX_TAG;
 		if (iLogPrinter != null) iLogPrinter.v(tag, msg, throwable);
-		println(tag, AbstractLogSetting.verbose, msg, throwable);
+		println(tag, Level.VERBOSE, msg, throwable);
 	}
 	
 	public final static void d(String tag, String msg) {
 		if (tag == null || "".equals(tag.trim())) tag = TGX_TAG;
 		if (iLogPrinter != null) iLogPrinter.d(tag, msg);
-		println(tag, AbstractLogSetting.debug, msg, null);
+		println(tag, Level.DEBUG, msg, null);
 	}
 	
 	public final static void d(String tag, String msg, Throwable throwable) {
 		if (tag == null || "".equals(tag.trim())) tag = TGX_TAG;
 		if (iLogPrinter != null) iLogPrinter.d(tag, msg, throwable);
-		println(tag, AbstractLogSetting.debug, msg, throwable);
+		println(tag, Level.DEBUG, msg, throwable);
 	}
 	
 	public final static void i(String tag, String msg) {
 		if (tag == null || "".equals(tag.trim())) tag = TGX_TAG;
 		if (iLogPrinter != null) iLogPrinter.i(tag, msg);
-		println(tag, AbstractLogSetting.info, msg, null);
+		println(tag, Level.INFO, msg, null);
 	}
 	
 	public final static void i(String tag, String msg, Throwable throwable) {
 		if (tag == null || "".equals(tag.trim())) tag = TGX_TAG;
 		if (iLogPrinter != null) iLogPrinter.i(tag, msg, throwable);
-		println(tag, AbstractLogSetting.info, msg, throwable);
+		println(tag, Level.INFO, msg, throwable);
 	}
 	
 	public final static void w(String tag, String msg) {
 		if (tag == null || "".equals(tag.trim())) tag = TGX_TAG;
 		if (iLogPrinter != null) iLogPrinter.w(tag, msg);
-		println(tag, AbstractLogSetting.warn, msg, null);
+		println(tag, Level.WARN, msg, null);
 	}
 	
 	public final static void w(String tag, Throwable throwable) {
 		if (tag == null || "".equals(tag.trim())) tag = TGX_TAG;
 		if (iLogPrinter != null) iLogPrinter.w(tag, throwable);
-		println(tag, AbstractLogSetting.warn, null, throwable);
+		println(tag, Level.WARN, null, throwable);
 	}
 	
 	public final static void w(String tag, String msg, Throwable throwable) {
 		if (tag == null || "".equals(tag.trim())) tag = TGX_TAG;
 		if (iLogPrinter != null) iLogPrinter.w(tag, msg, throwable);
-		println(tag, AbstractLogSetting.warn, msg, throwable);
+		println(tag, Level.WARN, msg, throwable);
 	}
 	
 	public final static void e(String tag, String msg) {
 		if (tag == null || "".equals(tag.trim())) tag = TGX_TAG;
 		if (iLogPrinter != null) iLogPrinter.e(tag, msg);
-		println(tag, AbstractLogSetting.error, msg, null);
+		println(tag, Level.ERROR, msg, null);
 	}
 	
 	public final static void e(String tag, Throwable throwable) {
 		if (tag == null || "".equals(tag.trim())) tag = TGX_TAG;
 		if (iLogPrinter != null) iLogPrinter.e(tag, throwable);
-		println(tag, AbstractLogSetting.error, null, throwable);
+		println(tag, Level.ERROR, null, throwable);
 	}
 	
 	public final static void e(String tag, String msg, Throwable throwable) {
 		if (tag == null || "".equals(tag.trim())) tag = TGX_TAG;
 		if (iLogPrinter != null) iLogPrinter.e(tag, msg, throwable);
-		println(tag, AbstractLogSetting.error, msg, throwable);
+		println(tag, Level.ERROR, msg, throwable);
 	}
 	
 	/**
 	 * @param tag
-	 * @param priority
+	 * @param level
 	 *            debug level
 	 * @return byte to write
 	 */
 	
-	public final static int println(String tag, int priority, String msg, Throwable throwable) {
+	public final static int println(String tag, Level level, String msg, Throwable throwable) {
 		if (tag == null || "".equals(tag.trim())) tag = TGX_TAG;
 		if (!AbstractLogSetting.isRemotePrint()) return 0;
 		int printNum = 0;
 		if (_instance != null && _instance.logIoActor != null) try
 		{
-			printNum = _instance.logIoActor.write(tag, priority, msg, throwable);
+			synchronized (_instance)
+			{
+				printNum = _instance.logIoActor.write(tag, level, msg, throwable);
+			}
 		}
 		catch (Exception e)
 		{
@@ -142,6 +150,18 @@ public class LogPrinter
 		if (_instance == null) return new LogPrinter(iLogIoActor);
 		else setIoActor(iLogIoActor);
 		return _instance;
+	}
+	
+	public static void actorClose() {
+		if (_instance != null && _instance.logIoActor != null) try
+		{
+			_instance.logIoActor.close();
+		}
+		catch (IOException e)
+		{
+			//#debug warn
+			e.printStackTrace();
+		}
 	}
 	
 	//#ifdef LOG_TAG

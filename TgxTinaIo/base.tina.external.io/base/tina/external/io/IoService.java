@@ -17,6 +17,7 @@ package base.tina.external.io;
 
 import base.tina.core.task.TaskService;
 import base.tina.core.task.infc.ITaskFactory;
+import base.tina.core.task.infc.ITaskListener;
 import base.tina.core.task.infc.ITaskProgress;
 import base.tina.core.task.infc.ITaskTimeout;
 
@@ -33,6 +34,15 @@ public class IoService
 	
 	private final TaskService taskService;
 	private IoTaskFactory     defaultFactory;
+	
+	public final boolean addHandler(ITaskListener handler) {
+		if (taskService == null) return false;
+		return taskService.addListener(handler);
+	}
+	
+	public final void rmHandler(int bindSerial) {
+		if (taskService != null) taskService.removeListener(bindSerial);
+	}
 	
 	public IoTask<?> requestService(String url, int mode, IoFilter filter, Object ioBuffer, boolean isShedule, int timelimit, long delayTime, byte retryLimit, Object attachment, ITaskProgress progress) {
 		return requestService(null, url, mode, filter, ioBuffer, isShedule, timelimit, delayTime, retryLimit, attachment, progress, 0, null, 0);

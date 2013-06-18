@@ -41,10 +41,11 @@ public abstract class BaseBridge
 	private final IBridge<?> mIBridge;
 	private Handler          recvHandler;
 	private boolean          isBridgeOn;
+	protected IBridgeOn      mBridgeOn;
 	
 	protected BaseBridge(Context context, IBridge<?> iBridge, Handler handler) {
 		if (iBridge == null || context == null) throw new NullPointerException();
-		mContext = context;
+		mContext = context.getApplicationContext();
 		mIBridge = iBridge;
 		recvHandler = handler;
 		service_action = context.getPackageName() + "$" + this.getClass().getSimpleName() + "$" + DefaultConsts.serviceAction + hashCode();
@@ -65,6 +66,7 @@ public abstract class BaseBridge
 			isBridgeOn = true;
 			sendDefaultCMD(DefaultConsts.SERVERACTION_CLIENT_START);
 			onRemoteConnected();
+			if (mBridgeOn != null) mBridgeOn.onRemoteConnected();
 			//#debug verbose
 			base.tina.core.log.LogPrinter.v(null, "Bridge Connected");
 		}
@@ -72,6 +74,7 @@ public abstract class BaseBridge
 		{
 			e.printStackTrace();
 			onRemoteConnectedEx();
+			if (mBridgeOn != null) mBridgeOn.onRemoteConnectedEx();
 		}
 	}
 	
@@ -93,9 +96,11 @@ public abstract class BaseBridge
 	}
 	
 	public final void stopBind() {
+		if (!isBridgeOn()) return;
 		//#debug 
 		base.tina.core.log.LogPrinter.d(null, "Bridge UnBind:" + this.getClass().getName() + "@" + hashCode());
 		mContext.unbindService(this);
+		mContext.unregisterReceiver(clientReceiver);
 	}
 	
 	@Override
@@ -108,6 +113,7 @@ public abstract class BaseBridge
 		clientReceiver = null;
 		rServiceStub = null;
 		isBridgeOn = false;
+		if (mBridgeOn != null) mBridgeOn.onRemoteDisConnected();
 		//#debug verbose
 		base.tina.core.log.LogPrinter.v(null, "Bridge Disconnected");
 	}
@@ -218,7 +224,11 @@ public abstract class BaseBridge
 		if (bundle != null) broadcastQueue.add(bundle);
 		//#debug
 		base.tina.core.log.LogPrinter.v(null, "QueueEmpty:" + broadcastQueue.isEmpty() + " |Condition: " + sentCondition.get() + " |BridgeOk:" + isBridgeOn);
-		if (broadcastQueue.isEmpty() || sentCondition.get() || !isBridgeOn) return;
+		if (broadcastQueue.isEmpty() || sentCondition.get() || !isBridgeOn)
+		{
+			if (broadcastQueue.isEmpty()) onAllSent();
+			return;
+		}
 		for (;;)
 		{
 			boolean sent = sentCondition.get();
@@ -240,4 +250,7 @@ public abstract class BaseBridge
 	private String service_action = "com.android.tina" + DefaultConsts.serviceAction + hashCode();
 	
 	protected abstract void onReceiveUpdate(int cmd, Bundle bundle);
+	
+	protected void onAllSent() {
+	}
 }

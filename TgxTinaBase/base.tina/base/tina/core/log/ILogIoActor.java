@@ -18,6 +18,8 @@ package base.tina.core.log;
 import java.io.Closeable;
 import java.io.IOException;
 
+import base.tina.core.log.ILogPrinter.Level;
+
 
 /**
  * @author Zhangzhuo
@@ -26,5 +28,5 @@ public interface ILogIoActor
         extends
         Closeable
 {
-	public int write(String tag, int priority, String msg, Throwable throwable) throws IOException;
+	public int write(String tag, Level level, String msg, Throwable throwable) throws IOException;
 }

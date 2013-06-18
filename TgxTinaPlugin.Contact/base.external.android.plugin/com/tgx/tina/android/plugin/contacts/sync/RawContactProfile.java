@@ -691,18 +691,10 @@ public class RawContactProfile
 				{
 					swap(name, GIVEN_NAME, FAMILY_NAME);
 				}
-				// 有可能N字段分析和FN的字段就是不同的,在英文中较常见
-				// else
-				// {
-				// for (int i = 1; i < name.length; i++)
-				// name[i] = null;
-				// name[GIVEN_NAME] = displayName;
-				// }
+				//交换之后依然不能组成相同的名字显示 组合，将无视此种组合，保持原状
 			}
-			// return;
 		}
 		name[DISPLAY_NAME] = displayName;
-		// name[DISPLAY_NAME] = null;
 	}
 	
 	final String formatAddress(String[] address) {

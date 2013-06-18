@@ -14,8 +14,6 @@ import java.text.DateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
-import base.tina.core.log.AbstractLogSetting.LogLevel;
-
 
 public class SimplePrinter
         implements
@@ -29,7 +27,7 @@ public class SimplePrinter
 	
 	@Override
 	public void v(String tag, String msg, Throwable throwable) {
-		System.out.println(build(tag, msg, LogLevel.VERBOSE));
+		System.out.println(build(tag, msg, Level.VERBOSE));
 		if (throwable != null) throwable.printStackTrace(System.out);
 	}
 	
@@ -40,7 +38,7 @@ public class SimplePrinter
 	
 	@Override
 	public void d(String tag, String msg, Throwable throwable) {
-		System.out.println(build(tag, msg, LogLevel.DEBUG));
+		System.out.println(build(tag, msg, Level.DEBUG));
 		if (throwable != null) throwable.printStackTrace(System.out);
 	}
 	
@@ -51,7 +49,7 @@ public class SimplePrinter
 	
 	@Override
 	public void i(String tag, String msg, Throwable throwable) {
-		System.out.println(build(tag, msg, LogLevel.INFO));
+		System.out.println(build(tag, msg, Level.INFO));
 		if (throwable != null) throwable.printStackTrace(System.out);
 	}
 	
@@ -67,7 +65,7 @@ public class SimplePrinter
 	
 	@Override
 	public void w(String tag, String msg, Throwable throwable) {
-		System.err.println(build(tag, msg, LogLevel.WARN));
+		System.err.println(build(tag, msg, Level.WARN));
 		if (throwable != null) throwable.printStackTrace(System.err);
 	}
 	
@@ -83,7 +81,7 @@ public class SimplePrinter
 	
 	@Override
 	public void e(String tag, String msg, Throwable throwable) {
-		System.err.println(build(tag, msg, LogLevel.ERROR));
+		System.err.println(build(tag, msg, Level.ERROR));
 		if (throwable != null) throwable.printStackTrace(System.err);
 	}
 	
@@ -103,7 +101,7 @@ public class SimplePrinter
 	private Date       date       = new Date();
 	private String     PID        = "unknown";
 	
-	private String build(String tag, String msg, LogLevel level) {
+	private String build(String tag, String msg, Level level) {
 		StringBuilder builder = new StringBuilder(64);
 		{
 			builder.setLength(0);

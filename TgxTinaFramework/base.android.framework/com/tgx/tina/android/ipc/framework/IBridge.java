@@ -25,6 +25,8 @@ public interface IBridge<T extends BaseBridge>
 	
 	public String remoteBootAction();
 	
+	public void setBootAction(String bootAction);
+	
 	public String actionCPermission();
 	
 	public String actionSPermission();

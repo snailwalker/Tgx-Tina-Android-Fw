@@ -1,10 +1,8 @@
 package com.tgx.test;
 
 import android.os.Bundle;
-import base.tina.external.io.IoFilter;
 
 import com.tgx.io.connect.android.ConnectionService;
-import com.tgx.io.connect.android.SocketIOListener;
 import com.tgx.io.connect.android.test.R;
 
 
@@ -13,12 +11,9 @@ public class TestConnectService
         ConnectionService
 {
 	
-	SocketIOListener socketListener;
-	
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		socketListener = new SocketIOListener();
 	}
 	
 	@Override
@@ -58,13 +53,8 @@ public class TestConnectService
 	}
 	
 	@Override
-	public SocketIOListener getSocketListener() {
-		return socketListener;
-	}
-	
-	@Override
-	public IoFilter getSocketFilter() {
-		return null;
+	public void onNetworkChange() {
+		
 	}
 	
 }

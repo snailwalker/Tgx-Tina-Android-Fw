@@ -168,4 +168,8 @@ public class IoSession<E extends IConnection>
 		return SerialNum;
 	}
 	
+	@Override
+	public boolean otherHandler() {
+		return false;
+	}
 }

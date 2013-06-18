@@ -94,6 +94,8 @@ public class TaskService
 	public final void startService() {
 		processor.start();
 		Thread.yield();
+		//#debug warn
+		if (recycleListener == null) base.tina.core.log.LogPrinter.w(null, "no recycle listener!");
 	}
 	
 	public final void stopService() {
@@ -293,8 +295,8 @@ public class TaskService
 			{
 				receive = responseQueue.poll();
 				receive.setResponse(true);
-				//#debug
-				base.tina.core.log.LogPrinter.d(null, "response notify: " + receive);
+				//#debug info
+				base.tina.core.log.LogPrinter.i(null, "response notify: " + receive + "->" + (receive.hasError() ? "excaught" : "handle"));
 				isHandled = false;
 				if (!listeners.isEmpty())
 				{
@@ -321,12 +323,12 @@ public class TaskService
 						{
 							//#debug warn 
 							base.tina.core.log.LogPrinter.w(null, ":No right bind listener!" + listenSerial);
-							//#ifdef check_bind_serial
+							//#if check_bind_serial
 							//$throw new RuntimeException(receive.getClass().getName() + ":No right bind listener!" + listenSerial);
 							//#endif
 						}
 					}
-					if (!isHandled) for (ITaskListener listener : listeners.values())
+					if (!isHandled && receive.otherHandler()) for (ITaskListener listener : listeners.values())
 					{
 						if (!listener.isEnable()) continue;
 						try
@@ -362,8 +364,9 @@ public class TaskService
 				}
 				//#debug warn
 				if (!isHandled) base.tina.core.log.LogPrinter.w(null, "NoListener Handle!" + receive.toString());
-				//#debug verbose
-				if (!isHandled) throw new RuntimeException(receive.getClass().getName() + ":No listener handle it!");
+				//#if check_bind_serial
+				//$if (!isHandled) throw new RuntimeException(receive.getClass().getName() + ":No listener handle it!");
+				//#endif
 			}
 		}
 		finally
@@ -375,8 +378,6 @@ public class TaskService
 	private final boolean isHandled(ITaskResult receive, ITaskListener listener) {
 		int result = receive.getSerialNum();
 		if (result == Integer.MIN_VALUE || result == Integer.MAX_VALUE) return false;
-		//#debug info
-		base.tina.core.log.LogPrinter.i(null, receive.hasError() ? "exCaught : " : "to handle : " + receive.toString());
 		return receive.hasError() ? listener.exceptionCaught(receive, this) : listener.ioHandle(receive, this);
 	}
 	

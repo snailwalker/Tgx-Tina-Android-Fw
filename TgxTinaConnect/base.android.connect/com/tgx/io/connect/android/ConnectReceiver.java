@@ -9,7 +9,7 @@ public class ConnectReceiver
         extends
         BroadcastReceiver
 {
-	final static String                TAG = "Connect";
+	final static String                TAG = "CONNECT_TGX";
 	protected static ConnectionService service;
 	
 	@Override
@@ -17,13 +17,12 @@ public class ConnectReceiver
 		ConnectionService.checkNetwork(context);
 		if (service != null)
 		{
-			if (ConnectionService.networkOk && ConnectionService.networkChType && service.getSocketListener() != null)
+			if (ConnectionService.networkChType)
 			{
 				//#debug 
-				base.tina.core.log.LogPrinter.d(TAG, "iterate connect!");
-				service.getSocketListener().iterateConnect(service.getSocketFilter(), ConnectionService.networkChType);
+				base.tina.core.log.LogPrinter.d(TAG, "Change!");
+				service.onNetworkChange();
 			}
 		}
 	}
-	
 }

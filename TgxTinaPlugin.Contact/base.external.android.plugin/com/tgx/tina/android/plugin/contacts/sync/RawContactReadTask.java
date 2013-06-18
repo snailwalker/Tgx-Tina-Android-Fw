@@ -74,7 +74,7 @@ public class RawContactReadTask
 		}
 	}
 	
-	protected RawContactPack getPack() {
+	protected RawContactPack getPack() throws Exception {
 		RawContactPack profilePack = new RawContactPack();
 		final String[] SELECTION_ARGS = new String[rawContactIDs.length];
 		for (int i = 0; i < rawContactIDs.length; i++)
@@ -97,32 +97,31 @@ public class RawContactReadTask
 			while (cursor.moveToNext() && !disable)
 			{
 				profile = null;
-				rawContactID = cursor.getInt(RawContactReadAllTask.DATA_PROJECTIONMAP.get(Data.RAW_CONTACT_ID));
+				rawContactID = cursor.getInt(cursor.getColumnIndex(Data.RAW_CONTACT_ID));
 				profile = profileMap.get(rawContactID);
-				if (profile == null) continue;
 				if (rawContactID != lastRawContatcID)// 由于检索过程以Data.RAW_CONTACT_ID排序,所以递增过程是有序可查的
 				{
-					if (lastRawContatcID >= 0)
+					if (lastRawContatcID > 0)
 					{
 						RawContactProfile lastProfile = profileMap.get(lastRawContatcID);
-						if (lastProfile != null) profilePack.addProfile(lastProfile);
+						profilePack.addProfile(lastProfile);
+						if (progress != null) progress.updateProgress(progressType, 1);
 					}
 					lastRawContatcID = rawContactID;
-					if (progress != null) progress.updateProgress(progressType, 1);
 				}
 				
-				contactID = cursor.getInt(RawContactReadAllTask.DATA_PROJECTIONMAP.get(Data.CONTACT_ID));
+				contactID = cursor.getInt(cursor.getColumnIndex(Data.CONTACT_ID));
 				profile.setContactID(contactID);
-				mimeType = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(Data.MIMETYPE));
+				mimeType = cursor.getString(cursor.getColumnIndex(Data.MIMETYPE));
 				if (ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE.equals(mimeType))
 				{
 					profile.name = new String[7];
-					profile.displayName = profile.name[RawContactProfile.DISPLAY_NAME] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME));
-					profile.name[RawContactProfile.PREFIX_NAME] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredName.PREFIX));
-					profile.name[RawContactProfile.GIVEN_NAME] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME));
-					profile.name[RawContactProfile.MIDDLE_NAME] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME));
-					profile.name[RawContactProfile.FAMILY_NAME] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME));
-					profile.name[RawContactProfile.SUFFIX_NAME] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredName.SUFFIX));
+					profile.displayName = profile.name[RawContactProfile.DISPLAY_NAME] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME));
+					profile.name[RawContactProfile.PREFIX_NAME] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.PREFIX));
+					profile.name[RawContactProfile.GIVEN_NAME] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME));
+					profile.name[RawContactProfile.MIDDLE_NAME] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME));
+					profile.name[RawContactProfile.FAMILY_NAME] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME));
+					profile.name[RawContactProfile.SUFFIX_NAME] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.SUFFIX));
 				}
 				else if (ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE.equals(mimeType))
 				{
@@ -134,8 +133,8 @@ public class RawContactReadTask
 						System.arraycopy(tmp, 0, profile.phones, 0, tmp.length);
 					}
 					int phone_index = profile.phones.length - 1;
-					profile.phones[phone_index][RawContactProfile.CONTENT_INDEX] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Phone.NUMBER));
-					profile.phones[phone_index][RawContactProfile.MIMETYPE_INDEX] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Phone.TYPE));
+					profile.phones[phone_index][RawContactProfile.CONTENT_INDEX] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+					profile.phones[phone_index][RawContactProfile.MIMETYPE_INDEX] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.TYPE));
 				}
 				else if (ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE.equals(mimeType))
 				{
@@ -147,16 +146,16 @@ public class RawContactReadTask
 						System.arraycopy(tmp, 0, profile.addresses, 0, tmp.length);
 					}
 					int address_index = profile.addresses.length - 1;
-					profile.addresses[address_index][RawContactProfile.CONTENT_INDEX] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS));
-					profile.addresses[address_index][RawContactProfile.MIMETYPE_INDEX] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredPostal.TYPE));
-					profile.addresses[address_index][RawContactProfile.ADDRESS_LABEL] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredPostal.LABEL));
-					profile.addresses[address_index][RawContactProfile.ADDRESS_STREET] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredPostal.STREET));
-					profile.addresses[address_index][RawContactProfile.ADDRESS_POBOX] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredPostal.POBOX));
-					profile.addresses[address_index][RawContactProfile.ADDRESS_NEIGHBORHOOD] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredPostal.NEIGHBORHOOD));
-					profile.addresses[address_index][RawContactProfile.ADDRESS_CITY] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredPostal.CITY));
-					profile.addresses[address_index][RawContactProfile.ADDRESS_REGION] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredPostal.REGION));
-					profile.addresses[address_index][RawContactProfile.ADDRESS_POSTCODE] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredPostal.POSTCODE));
-					profile.addresses[address_index][RawContactProfile.ADDRESS_COUNTRY] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.StructuredPostal.COUNTRY));
+					profile.addresses[address_index][RawContactProfile.CONTENT_INDEX] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS));
+					profile.addresses[address_index][RawContactProfile.MIMETYPE_INDEX] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.TYPE));
+					profile.addresses[address_index][RawContactProfile.ADDRESS_LABEL] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.LABEL));
+					profile.addresses[address_index][RawContactProfile.ADDRESS_STREET] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.STREET));
+					profile.addresses[address_index][RawContactProfile.ADDRESS_POBOX] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.POBOX));
+					profile.addresses[address_index][RawContactProfile.ADDRESS_NEIGHBORHOOD] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.NEIGHBORHOOD));
+					profile.addresses[address_index][RawContactProfile.ADDRESS_CITY] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.CITY));
+					profile.addresses[address_index][RawContactProfile.ADDRESS_REGION] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.REGION));
+					profile.addresses[address_index][RawContactProfile.ADDRESS_POSTCODE] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.POSTCODE));
+					profile.addresses[address_index][RawContactProfile.ADDRESS_COUNTRY] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.StructuredPostal.COUNTRY));
 				}
 				else if (ContactsContract.CommonDataKinds.Organization.CONTENT_ITEM_TYPE.equals(mimeType))
 				{
@@ -168,10 +167,10 @@ public class RawContactReadTask
 						System.arraycopy(tmp, 0, profile.orgs, 0, tmp.length);
 					}
 					int org_index = profile.orgs.length - 1;
-					profile.orgs[org_index][RawContactProfile.CONTENT_INDEX] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Organization.COMPANY));
-					profile.orgs[org_index][RawContactProfile.MIMETYPE_INDEX] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Organization.TYPE));
-					profile.orgs[org_index][RawContactProfile.ORG_TITEL] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Organization.TITLE));
-					profile.orgs[org_index][RawContactProfile.SUB_CONTENT_INDEX] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Organization.LABEL));
+					profile.orgs[org_index][RawContactProfile.CONTENT_INDEX] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Organization.COMPANY));
+					profile.orgs[org_index][RawContactProfile.MIMETYPE_INDEX] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Organization.TYPE));
+					profile.orgs[org_index][RawContactProfile.ORG_TITEL] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Organization.TITLE));
+					profile.orgs[org_index][RawContactProfile.SUB_CONTENT_INDEX] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Organization.LABEL));
 				}
 				else if (ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE.equals(mimeType))
 				{
@@ -183,14 +182,14 @@ public class RawContactReadTask
 						System.arraycopy(tmp, 0, profile.emails, 0, tmp.length);
 					}
 					int email_index = profile.emails.length - 1;
-					profile.emails[email_index][RawContactProfile.CONTENT_INDEX] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Email.DATA));
-					profile.emails[email_index][RawContactProfile.MIMETYPE_INDEX] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Email.TYPE));
+					profile.emails[email_index][RawContactProfile.CONTENT_INDEX] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Email.DATA));
+					profile.emails[email_index][RawContactProfile.MIMETYPE_INDEX] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Email.TYPE));
 				}
 				else if (ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE.equals(mimeType))
 				{
-					if (cursor.getInt(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Event.TYPE)) == ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY)
+					if (cursor.getInt(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Event.TYPE)) == ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY)
 					{
-						profile.birthday = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Event.START_DATE));
+						profile.birthday = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Event.START_DATE));
 					}
 				}
 				else if (ContactsContract.CommonDataKinds.Website.CONTENT_ITEM_TYPE.equals(mimeType))
@@ -204,32 +203,35 @@ public class RawContactReadTask
 						System.arraycopy(tmp, 0, profile.webUrls, 0, tmp.length);
 					}
 					int webUrl_index = profile.webUrls.length - 1;
-					profile.webUrls[webUrl_index] = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Website.URL));
+					profile.webUrls[webUrl_index] = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Website.URL));
 				}
-				else if (ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE.equals(mimeType)) profile.note = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Note.NOTE));
-				else if (ContactsContract.CommonDataKinds.Nickname.CONTENT_ITEM_TYPE.equals(mimeType)) profile.nickName = cursor.getString(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Nickname.NAME));
+				else if (ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE.equals(mimeType)) profile.note = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Note.NOTE));
+				else if (ContactsContract.CommonDataKinds.Nickname.CONTENT_ITEM_TYPE.equals(mimeType)) profile.nickName = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Nickname.NAME));
 				else if (ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE.equals(mimeType))
 				{
-					byte[] photoData = cursor.getBlob(RawContactReadAllTask.DATA_PROJECTIONMAP.get(ContactsContract.CommonDataKinds.Photo.PHOTO));
+					byte[] photoData = cursor.getBlob(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO));
 					profile.photoEncoded = IoUtil.base64Encoder(photoData, 0, 76);
 				}
 			}
 			RawContactProfile lastProfile = profileMap.get(lastRawContatcID);
-			if (lastProfile != null) profilePack.addProfile(lastProfile);
+			if (disable)
+			{
+				lastProfile.dispose();
+				profile.dispose();
+				return null;
+			}
+			profilePack.addProfile(lastProfile);
 		}
 		catch (Exception e)
 		{
-			//#debug warn
-			e.printStackTrace();
 			if (progress != null) progress.finishProgress(TaskProgressType.error);
+			throw e;
 		}
 		finally
 		{
 			cursor.close();
 		}
-		if (profileMap != null) profileMap.clear();
 		if (progress != null) progress.finishProgress(disable ? TaskProgressType.cancel : TaskProgressType.complete);
-		
 		return profilePack;
 	}
 	

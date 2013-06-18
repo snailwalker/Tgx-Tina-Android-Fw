@@ -103,4 +103,9 @@ public abstract class AbstractResult
 		if (attributes == null) attributes = new HashMap<String, Object>(2, 0.5f);
 		attributes.put(key, value);
 	}
+	
+	@Override
+	public boolean otherHandler() {
+		return true;
+	}
 }

@@ -83,4 +83,6 @@ public interface ITaskResult
 	public void setAttribute(String key, Object value);
 	
 	public Object getAttribute(String key);
+	
+	public boolean otherHandler();
 }

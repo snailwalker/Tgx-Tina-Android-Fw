@@ -12,8 +12,6 @@ package com.tgx.tina.android.log;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -107,7 +105,9 @@ public class AndroidPrinter
 		try
 		{
 			LogPrinter.i(null, "wait");
+			
 			Thread.sleep(3000);
+			LogPrinter.actorClose();
 		}
 		catch (InterruptedException e)
 		{
@@ -129,8 +129,11 @@ public class AndroidPrinter
 		i(LogPrinter.LOG_TAG, "AndroidPrinter: ---- begin ----");
 		selfPid = android.os.Process.myPid();
 		_instance = this;
+		if (!dumpFile) return;
 		java.util.Calendar calendar = java.util.Calendar.getInstance();
-		String fileName = LOG_NAME + java.text.DateFormat.getDateInstance().format(calendar.getTime()).replace(' ', '_').replace('-', '_').replace(':', '_') + selfPid + ".log";
+		String fileName = LOG_NAME + java.text.DateFormat.getDateInstance().format(calendar.getTime()).replace(' ', '_').replace('-', '_').replace(':', '_').replace('/', '_').replace(',', '_') + "_" + selfPid + ".log";
+		//#debug info
+		i(LogPrinter.LOG_TAG, "log-file: " + fileName);
 		String sdStatus = android.os.Environment.getExternalStorageState();
 		if (sdStatus.equals(android.os.Environment.MEDIA_MOUNTED))
 		{
@@ -138,6 +141,7 @@ public class AndroidPrinter
 			{
 				java.io.File logDir = new File(LOG_DIR);
 				if (!logDir.exists()) logDir.mkdirs();
+				
 				java.io.File logFile = new File(LOG_DIR + "/" + fileName);
 				if (!logFile.exists()) logFile.createNewFile();
 				logFileName = logFile.getAbsolutePath();
@@ -160,6 +164,22 @@ public class AndroidPrinter
 				e.printStackTrace();
 			}
 		}
+		//#ifdef debug
+		Level lv = Level.DEBUG;
+		//#else
+		//$LEVEL lv = LEVEL.WARN;
+		//#endif
+		FileLogActor actor;
+		try
+		{
+			actor = new FileLogActor(getCurFile(), lv, Integer.toString(selfPid));
+			LogPrinter.getLogPrinter(actor);
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+			return;
+		}
 	}
 	
 	public static String getCurFile() {
@@ -181,65 +201,22 @@ public class AndroidPrinter
 	
 	private final static boolean dumpFile = true;
 	
-	public final static void createByApp(Context appContext, LEVEL level) {
+	public final static void createByApp(Context appContext) {
 		AndroidPrinter androidPrinter = AndroidPrinter.getIPrinter(appContext);
 		LogPrinter.setIPrinter(androidPrinter);
 		//#debug info
 		LogPrinter.i(null, "Application pid: " + android.os.Process.myPid() + " /TID: " + android.os.Process.myTid());
-		if (!dumpFile) return;
-		LogPrinter.i(null, "start dump");
-		ArrayList<String> commandLine = new ArrayList<String>();
-		commandLine.add("logcat");
-		commandLine.add("-v");
-		commandLine.add("time");
-		String lStr = "s";
-		switch (level) {
-			case VERBOSE:
-				lStr = "v";
-				break;
-			case DEBUG:
-				lStr = "d";
-				break;
-			case INFO:
-				lStr = "i";
-				break;
-			case ERROR:
-				lStr = "e";
-				break;
-			case ASSERT:
-			case FATAL:
-			case UI:
-				lStr = "a";
-				break;
-			case SILENT:
-				lStr = "s";
-				break;
-			default:
-				break;
-		}
-		commandLine.add("*:" + lStr);
-		try
-		{
-			Runtime.getRuntime().exec("logcat -c");
-			Process process = Runtime.getRuntime().exec(commandLine.toArray(new String[commandLine.size()]));
-			InputStream in = process.getInputStream();
-			LogPrinter.getLogPrinter(new LocalLogActor(getCurFile(), in));
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
 	}
 	
 	public final static void createByActivity(Activity activity) {
-		createByApp(activity, LEVEL.WARN);
+		createByApp(activity);
 		_instance.includeKill(android.os.Process.myPid());
 		//#debug info
 		LogPrinter.i(null, " Activity pid: " + android.os.Process.myPid());
 	}
 	
 	public final static void createByService(Service service, boolean includeKill) {
-		createByApp(service, LEVEL.WARN);
+		createByApp(service);
 		if (includeKill) _instance.includeKill(android.os.Process.myPid());
 		//#debug info
 		LogPrinter.i(null, "Service pid: " + android.os.Process.myPid());

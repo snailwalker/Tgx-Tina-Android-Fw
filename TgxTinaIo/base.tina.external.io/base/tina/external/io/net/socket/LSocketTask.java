@@ -77,9 +77,9 @@ public class LSocketTask
 	
 	final AtomicBoolean disConnectAll = new AtomicBoolean(false);
 	final AtomicBoolean hasDisConnect = new AtomicBoolean(false);
-	volatile long       delayTime, waitStart, idleTime;
+	private long        delayTime, waitStart, idleTime;
 	final AtomicBoolean wakenUp       = new AtomicBoolean(false);
-	private int         selectorError;
+	private int         selectorError, selectorECount;
 	
 	final void offerWrite(SocketTask socketTask) {
 		if (todoTasks.offer(socketTask) && socketTask.ioSession != null) socketTask.ioSession.offerWrite();
@@ -89,8 +89,12 @@ public class LSocketTask
 		toRegister.offer(cSocketTask);
 	}
 	
+	private Thread  myThread;
+	private boolean shutdown;
+	
 	@Override
 	public final void run() throws Exception {
+		myThread = Thread.currentThread();
 		if (selector == null) selectorX = selector = SelectorProvider.provider().openSelector();
 		else if (swap_selector != null)
 		{
@@ -102,8 +106,9 @@ public class LSocketTask
 			selector = swap_selector;
 			swap_selector = null;
 			//#debug
-			base.tina.core.log.LogPrinter.d(null, "swap selector");
+			base.tina.core.log.LogPrinter.d("selector_err", "swap selector key size: " + selector.keys().size());
 		}
+		this.shutdown = false;
 		CSocketTask cSocketTask;
 		do
 		{
@@ -152,49 +157,76 @@ public class LSocketTask
 		 */
 		if (idleTime < 50 && selectedCount == 0)
 		{
-			selectorError++;
-			Thread.yield();
-			if (selectorError > 10)
+			synchronized (myThread)
 			{
-				selectorX = SelectorProvider.provider().openSelector();
-				//#debug warn
-				base.tina.core.log.LogPrinter.w(null, "Selector error:runtime error[ selector invalid ]" + "old: " + selector + "|new: " + selectorX);
-				for (SelectionKey key : selector.keys())
+				try
 				{
-					if (!key.isValid() || key.interestOps() == 0) continue;
-					
-					@SuppressWarnings ("unchecked")
-					final IoSession<NioSocketICon> ioSession = (IoSession<NioSocketICon>) key.attachment();
-					if (ioSession != null)
-					{
-						NioSocketICon iCon = ioSession.getConnection();
-						iCon.setSelectorX(this);
-						iCon.register(SelectionKey.OP_READ, ioSession);//在这个节点上直接执行OP_READ注册即可
-					}
-					key.cancel();
-					//					continue;
-					//					if (ioSession != null)
-					//					{
-					//						ioSession.setError(new ClosedChannelException());
-					//						for (;;)
-					//						{
-					//							boolean dis = ioSession.disconnect.get();
-					//							if (dis || ioSession.disconnect.compareAndSet(false, true)) break;
-					//						}
-					//					}
-					//					for (;;)
-					//					{
-					//						boolean hasDis = hasDisConnect.get();
-					//						if (hasDis || hasDisConnect.compareAndSet(false, true)) break;
-					//					}
-					
+					myThread.wait(1000);
 				}
-				swap_selector = selectorX;
+				catch (InterruptedException e)
+				{
+					//Ignore
+				}
+			}
+			selectorError++;
+			if (selectorError > 50)
+			{
+				
+				++selectorECount;
+				boolean closeAllsession = selectorECount > 10;
+				if (closeAllsession)
+				{
+					selectorECount = 0;
+					this.shutdown = true;
+					for (;;)
+					{
+						boolean dis = hasDisConnect.get();
+						if (dis || hasDisConnect.compareAndSet(false, true)) break;
+					}
+				}
+				Set<SelectionKey> keys = selector.keys();
+				boolean shutdown = true;
+				if (!keys.isEmpty())
+				{
+					selectorX = SelectorProvider.provider().openSelector();
+					//#debug warn
+					base.tina.core.log.LogPrinter.w("selector_err", "Selector error:runtime error[ selector invalid ]" + "old: " + selector + "|new: " + selectorX);
+					for (SelectionKey key : selector.keys())
+					{
+						if (!key.isValid() || key.interestOps() == 0) continue;
+						@SuppressWarnings ("unchecked")
+						final IoSession<NioSocketICon> ioSession = (IoSession<NioSocketICon>) key.attachment();
+						if (ioSession != null)
+						{
+							//#debug warn
+							base.tina.core.log.LogPrinter.w("selector_err", "Iosession:" + ioSession.url);
+							if (closeAllsession)
+							{
+								for (;;)
+								{
+									boolean dis = ioSession.disconnect.get();
+									if (dis || ioSession.disconnect.compareAndSet(false, true)) break;
+								}
+							}
+							else
+							{
+								shutdown = false;
+								NioSocketICon iCon = ioSession.getConnection();
+								iCon.setSelectorX(this);
+								iCon.registerRead(ioSession);
+							}
+						}
+						key.cancel();
+					}
+					swap_selector = selectorX;
+				}
+				this.shutdown = shutdown;
 				selectorError = 0;
-				return;
+				if (!closeAllsession && !this.shutdown) return;
 			}
 		}
 		else selectorError = 0;
+		
 		// ----------------------------------------------------------------------------------
 		if (selectedCount > 0)
 		{
@@ -220,7 +252,7 @@ public class LSocketTask
 				}
 			}
 		}
-		
+		int oldTO_size = timeOutTasks.size();
 		if (!timeOutTasks.isEmpty())
 		{
 			long curTime = System.currentTimeMillis();
@@ -273,7 +305,7 @@ public class LSocketTask
 			needAlarm = false;
 			delayTime = -1;
 		}
-		else
+		else if (oldTO_size != timeOutTasks.size())
 		{
 			Collections.sort(timeOutTasks, toWaitComparator);
 			delayTime = TimeUnit.SECONDS.toMillis(timeOutTasks.getFirst().timeOut);
@@ -281,6 +313,7 @@ public class LSocketTask
 		
 		if (hasDisConnect.get())
 		{
+			hasDisConnect.set(false);
 			Set<SelectionKey> keys = selector.keys();
 			if (keys.size() > 0)
 			{
@@ -289,25 +322,42 @@ public class LSocketTask
 				{
 					SelectionKey key = iter.next();
 					ioSession = (IoSession<?>) key.attachment();
-					if (ioSession == null) continue;
-					else if (ioSession.disconnect.get()) try
+					if (ioSession == null || ioSession.disconnect.get())
 					{
-						ioSession.close(false);
-					}
-					catch (Exception e)
-					{
-						//#debug warn
-						e.printStackTrace();
-					}
-					finally
-					{
-						if (!ioSession.hasError()) ioSession.setError(new ClosedChannelException());
-						commitResult(ioSession);
+						key.cancel();
+						if (ioSession == null) continue;
+						else try
+						{
+							ioSession.close(false);
+						}
+						catch (Exception e)
+						{
+							//#debug warn
+							e.printStackTrace();
+						}
+						finally
+						{
+							if (!ioSession.hasError()) ioSession.setError(new ClosedChannelException());
+							commitResult(ioSession);
+						}
 					}
 				}
 				scheduleService.commitNotify();
 			}
-			hasDisConnect.set(false);
+		}
+		if (this.shutdown)
+		{
+			synchronized (myThread)
+			{
+				try
+				{
+					myThread.wait();
+				}
+				catch (InterruptedException e)
+				{
+					//Ignore
+				}
+			}
 		}
 	}
 	
@@ -319,6 +369,7 @@ public class LSocketTask
 	@Override
 	public final void wakeUp() {
 		if (wakenUp.compareAndSet(false, true) && selector != null && selector.isOpen()) selector.wakeup();
+		else if (myThread != null) myThread.interrupt();
 	}
 	
 	@Override
@@ -539,14 +590,16 @@ public class LSocketTask
 						{
 							//#debug
 							base.tina.core.log.LogPrinter.d(null, "toWrite nothing has been written!");
-							try
+							synchronized (myThread)
 							{
-								wait(200);// 有点问题 可能会引发电源管理问题
-							}
-							catch (IllegalMonitorStateException ie)
-							{
-								//#debug warn
-								base.tina.core.log.LogPrinter.w(null, "toWrite 写不出去,而且不停的有请求进来,导致多线程并发操作LSocketTask");
+								try
+								{
+									myThread.wait(200);// 有点问题 可能会引发电源管理问题
+								}
+								catch (InterruptedException ie)
+								{
+									//Ignore
+								}
 							}
 							continue WriteCycle;
 						}

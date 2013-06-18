@@ -18,11 +18,6 @@ package com.tgx.tina.android.db.api.provider;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import base.tina.core.log.ILogPrinter.LEVEL;
-import base.tina.core.log.LogPrinter;
-
-import com.tgx.tina.android.log.AndroidPrinter;
-
 import android.content.ContentProvider;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
@@ -34,6 +29,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
+
+import com.tgx.tina.android.log.AndroidPrinter;
 
 
 public abstract class BaseProvider
@@ -82,14 +79,28 @@ public abstract class BaseProvider
 		
 		@Override
 		public void onUpgrade(final SQLiteDatabase db, int oldV, final int newV) {
-			//#debug verbose
-			base.tina.core.log.LogPrinter.v(TAG, "upgrad database");
-			Collection<BaseTable> tables = config.getTables();
-			if (tables != null) for (BaseTable table : tables)
+			if (upgrade(db, oldV, newV, config))
 			{
-				table.alterTable(db, getContext());
+				//#debug verbose
+				base.tina.core.log.LogPrinter.v(TAG, "upgrad database");
+				Collection<BaseTable> tables = config.getTables();
+				if (tables != null) for (BaseTable table : tables)
+				{
+					table.alterTable(db, getContext());
+				}
 			}
 		}
+	}
+	
+	/**
+	 * 
+	 * @param db
+	 * @param oldV
+	 * @param newV
+	 * @return alter all table
+	 */
+	protected boolean upgrade(final SQLiteDatabase db, int oldV, final int newV, final BaseProviderConfig config) {
+		return true;
 	}
 	
 	private SQLiteDatabase db;
@@ -105,13 +116,8 @@ public abstract class BaseProvider
 	public boolean onCreate() {
 		Context context = getContext();
 		//#debug info
-		android.util.Log.i(LogPrinter.LOG_TAG, "--BaseProvide-- Create");
-		//#ifdef debug
-		LEVEL lv = LEVEL.WARN;
-		//#else
-		//$LEVEL lv = LEVEL.WARN;
-		//#endif
-		AndroidPrinter.createByApp(context, lv);
+		android.util.Log.i(base.tina.core.log.LogPrinter.LOG_TAG, "--BaseProvide-- Create");
+		AndroidPrinter.createByApp(context);
 		// init config
 		String AUTHORITY = getAuthority();
 		config = new BaseProviderConfig(AUTHORITY, sURIMatcher);

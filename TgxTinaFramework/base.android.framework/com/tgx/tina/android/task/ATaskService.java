@@ -41,62 +41,68 @@ public class ATaskService
 	AlarmManager            alarmManager;
 	//#debug
 	volatile long           preWakeTime;
-	final static long       AlarmGap       = TimeUnit.SECONDS.toMillis(600);
+	final static long       AlarmGap   = TimeUnit.SECONDS.toMillis(600);
 	Context                 context;
-	private boolean         isScreenOn     = true;
-	final BroadcastReceiver screenReceiver = new BroadcastReceiver()
-	                                       {
-		                                       
-		                                       @Override
-		                                       public void onReceive(Context context, Intent intent) {
-			                                       if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction()))
-			                                       {
-				                                       isScreenOn = false;
-				                                       //#debug
-				                                       base.tina.core.log.LogPrinter.d(null, "Screen Off Set Alarm | WakeLock");
-				                                       if (mainQueue.toWakeUpAbsoluteTime.get() > 0) setScheduleAlarmTime(mainQueue.toWakeUpAbsoluteTime.get());
-				                                       else wakeLock();
-			                                       }
-			                                       else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction()))
-			                                       {
-				                                       //#debug
-				                                       base.tina.core.log.LogPrinter.d(null, "Screen On Release WakeLock");
-				                                       isScreenOn = true;
-				                                       wakeUnlock();
-			                                       }
-			                                       else if (TASK_SCHEDULE_ACTION.equals(intent.getAction()))
-			                                       {
-				                                       //#ifdef debug
-				                                       java.util.Calendar calendar = java.util.Calendar.getInstance();
-				                                       //#debug
-				                                       base.tina.core.log.LogPrinter.d(null, "CPU ON + AlarmReceiver1:-> cTime; " + java.text.DateFormat.getDateInstance().format(calendar.getTime()));
-				                                       //#endif
-				                                       /*
-													    * 无需担心Unlock 当队列中的头节点
-													    * 设置完时间时将释放wakelock
-													    * ,当队列中无任务时也将自动释放wakelock
-													    */
-				                                       wakeLock();
-				                                       wakeUp();
-			                                       }
-			                                       else if (TASK_ALARM_ACTION.equals(intent.getAction()))
-			                                       {
-				                                       int alarmKey = intent.getIntExtra(TASK_ALARM_ACTION, 0);
-				                                       //#ifdef debug
-				                                       java.util.Calendar calendar = java.util.Calendar.getInstance();
-				                                       //#debug
-				                                       base.tina.core.log.LogPrinter.d(null, "CPU ON + AlarmReceiver2:-> cTime; " + java.text.DateFormat.getDateInstance().format(calendar.getTime()));
-				                                       //#debug
-				                                       base.tina.core.log.LogPrinter.d(null, "toGet:" + alarmKey);
-				                                       //#endif
-				                                       TaskAlarmTimer taskAlarmTimer = taskAlarmMap.get(alarmKey);
-				                                       //#debug
-				                                       base.tina.core.log.LogPrinter.d(null, "TaskAlarmTimer:" + taskAlarmTimer);
-				                                       if (taskAlarmTimer != null) taskAlarmTimer.wakeUpTask();
-				                                       wakeLock(200);
-			                                       }
-		                                       }
-	                                       };
+	private boolean         isScreenOn = true;
+	final BroadcastReceiver screenReceiver;
+	
+	public ATaskService() {
+		super();
+		TASK_SCHEDULE_ACTION = TASK_SCHEDULE_ACTION_ + Integer.toHexString(hashCode());
+		TASK_ALARM_ACTION = TASK_ALARM_ACTION_ + Integer.toHexString(hashCode());
+		screenReceiver = new BroadcastReceiver()
+		{
+			
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction()))
+				{
+					isScreenOn = false;
+					//#debug
+					base.tina.core.log.LogPrinter.d(null, "Screen Off Set Alarm | WakeLock");
+					if (mainQueue.toWakeUpAbsoluteTime.get() > 0) setScheduleAlarmTime(mainQueue.toWakeUpAbsoluteTime.get());
+					else wakeLock();
+				}
+				else if (Intent.ACTION_SCREEN_ON.equals(intent.getAction()))
+				{
+					//#debug
+					base.tina.core.log.LogPrinter.d(null, "Screen On Release WakeLock");
+					isScreenOn = true;
+					wakeUnlock();
+				}
+				else if (TASK_SCHEDULE_ACTION.equals(intent.getAction()))
+				{
+					//#ifdef debug
+					java.util.Calendar calendar = java.util.Calendar.getInstance();
+					//#debug
+					base.tina.core.log.LogPrinter.d(null, "CPU ON + AlarmReceiver1:-> cTime; " + java.text.DateFormat.getDateInstance().format(calendar.getTime()));
+					//#endif
+					/*
+					 * 无需担心Unlock 当队列中的头节点 设置完时间时将释放wakelock
+					 * ,当队列中无任务时也将自动释放wakelock
+					 */
+					wakeLock();
+					wakeUp();
+				}
+				else if (TASK_ALARM_ACTION.equals(intent.getAction()))
+				{
+					int alarmKey = intent.getIntExtra(TASK_ALARM_ACTION, 0);
+					//#ifdef debug
+					java.util.Calendar calendar = java.util.Calendar.getInstance();
+					//#debug
+					base.tina.core.log.LogPrinter.d(null, "CPU ON + AlarmReceiver2:-> cTime; " + java.text.DateFormat.getDateInstance().format(calendar.getTime()));
+					//#debug
+					base.tina.core.log.LogPrinter.d(null, "toGet:" + alarmKey);
+					//#endif
+					TaskAlarmTimer taskAlarmTimer = taskAlarmMap.get(alarmKey);
+					//#debug
+					base.tina.core.log.LogPrinter.d(null, "TaskAlarmTimer:" + taskAlarmTimer);
+					if (taskAlarmTimer != null) taskAlarmTimer.wakeUpTask();
+					wakeLock(200);
+				}
+			}
+		};
+	}
 	
 	public final boolean isScreenOn() {
 		return isScreenOn;
@@ -231,9 +237,11 @@ public class ATaskService
 		
 	}
 	
-	protected final static String TASK_SCHEDULE_ACTION = "AlarmTaskSchedule";
-	protected final static String TASK_ALARM_ACTION    = "AlarmTaskSelf";
-	private final AtomicBoolean   started              = new AtomicBoolean(false);
+	protected final static String TASK_SCHEDULE_ACTION_ = "AlarmTaskSchedule";
+	protected final static String TASK_ALARM_ACTION_    = "AlarmTaskSelf";
+	private final String          TASK_SCHEDULE_ACTION;
+	private final String          TASK_ALARM_ACTION;
+	private final AtomicBoolean   started               = new AtomicBoolean(false);
 	
 	/**
 	 * TaskService 启动函数 在此之前需要将listener都加入到监听队列中
@@ -293,22 +301,20 @@ public class ATaskService
 			else
 			{
 				mainWakeLock.acquire();
-				//#ifdef debug
+				//#debug
 				preWakeTime = System.currentTimeMillis();
 				//#debug
 				base.tina.core.log.LogPrinter.d(null, "WakeLock Time:->" + preWakeTime);
-				//#endif
 			}
 		}
 	}
 	
 	public final void wakeUnlock() {
 		if (mainWakeLock == null || !mainWakeLock.isHeld()) return;
-		//#ifdef debug
+		//#debug
 		long wakeKeepTime = System.currentTimeMillis() - preWakeTime;
 		//#debug
 		base.tina.core.log.LogPrinter.d(null, "WakeLock Keep Time:->" + wakeKeepTime);
-		//#endif
 		mainWakeLock.release();
 	}
 	

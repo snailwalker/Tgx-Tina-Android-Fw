@@ -1,4 +1,3 @@
-debug=0
-LOG_DIR="TGXTINA"
-LOG_NAME="TGX_TINA"
+LOG_DIR="TgxTina"
+LOG_NAME="TgxTina_Log_"
 MULTI_ACTIVITY=true
