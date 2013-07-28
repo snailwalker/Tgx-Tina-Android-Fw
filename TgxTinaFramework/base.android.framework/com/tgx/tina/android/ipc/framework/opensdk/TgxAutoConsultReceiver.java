@@ -6,7 +6,7 @@ import android.content.Intent;
 import android.net.Uri;
 
 
-public abstract class AutoConsultReceiver
+public abstract class TgxAutoConsultReceiver
         extends
         BroadcastReceiver
 {
@@ -19,6 +19,8 @@ public abstract class AutoConsultReceiver
 		brIntent.setData(Uri.parse(getConsultData(appContext)));
 		brIntent.putExtra("bootAction", getRemoteAction(appContext));
 		appContext.sendBroadcast(brIntent, getConsultPermission(appContext));
+		//#debug
+		base.tina.core.log.LogPrinter.d("VOTE", "Act: " + getConsultAction(appContext) + " D: " + getConsultData(appContext) + " RAct: " + getRemoteAction(appContext) + " Per: " + getConsultPermission(appContext));
 		abortBroadcast();
 	}
 	

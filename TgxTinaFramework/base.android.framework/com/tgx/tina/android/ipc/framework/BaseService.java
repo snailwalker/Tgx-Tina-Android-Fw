@@ -17,6 +17,7 @@ package com.tgx.tina.android.ipc.framework;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -198,8 +199,11 @@ public abstract class BaseService
 			if (System.currentTimeMillis() - lastSendBroadcastTime > SEND_BROADCAST_TIMESPACE)
 			{
 				ArrayList<Bundle> bundleList = new ArrayList<Bundle>(broadcastQueue.size() + 1);
-				bundleList.addAll(broadcastQueue);
-				broadcastQueue.removeAll(bundleList);
+				for (Iterator<Bundle> it = broadcastQueue.iterator(); it.hasNext();)
+				{
+					bundleList.add(it.next());
+					it.remove();
+				}
 				bundleList.add(bundle);
 				Intent i = new Intent(service_update_ui);
 				i.putParcelableArrayListExtra("bundle", bundleList);
@@ -243,8 +247,13 @@ public abstract class BaseService
 				boolean intoQueue = broadcastDirectIntoQueue.get();
 				if (!intoQueue || broadcastDirectIntoQueue.compareAndSet(true, false)) break retry;
 			}
-			ArrayList<Bundle> bundleList = new ArrayList<Bundle>(broadcastQueue);
-			broadcastQueue.removeAll(bundleList);
+			if (broadcastQueue.isEmpty()) return true;
+			ArrayList<Bundle> bundleList = new ArrayList<Bundle>(broadcastQueue.size());
+			for (Iterator<Bundle> it = broadcastQueue.iterator(); it.hasNext();)
+			{
+				bundleList.add(it.next());
+				it.remove();
+			}
 			Intent i = new Intent(service_update_ui);
 			i.putParcelableArrayListExtra("bundle", bundleList);
 			sendBroadcast(i, actionCPermission());

@@ -1,3 +1,18 @@
+/*******************************************************************************
+ * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ *******************************************************************************/
 package com.tgx.tina.android.plugin.contact.search;
 
 import java.util.Arrays;
@@ -73,38 +88,6 @@ public class SearchPy<T>
 	
 	native String[] getHightLights(int tree, int[] searched, String keyText, String dyeStr, boolean isT9);
 	
-	native String[] getPyHightLights(int tree, int[] searched, String keyText, String dyeStr, boolean isT9);
-	
-	native String[] getNameHightLights(int tree, int[] searched, String keyText, String dyeStr, boolean isT9);
-	
-	native String[] getPhoneHightLights(int tree, int[] searched, String keyText, String dyeStr);
-	
-	/**
-	 * @param searchedInfos
-	 *            已搜出的结果集合
-	 * @param start
-	 *            着色操作在结果集合中的起始位置
-	 * @param limit
-	 *            着色操作的数量限定
-	 * @param keyText
-	 *            搜索时使用的KeyWord
-	 * @param dyeStr
-	 *            结果使用的着色编码 eg.{<font color=#D64206>}
-	 * @author ZhangZhuo
-	 * @description 此方法只提供对电话号码进行着色，不对姓名进行处理。
-	 */
-	public void javaGetPhoneHighLights(SearchInfo<T>[] searchedInfos, int start, int limit, String keyText, String dyeStr) {
-		if (searchedInfos.length == 0) throw new IllegalArgumentException("No searched!");
-		if (start >= searchedInfos.length || start < 0) throw new ArrayIndexOutOfBoundsException();
-		if (start + limit >= searchedInfos.length) limit = searchedInfos.length - start;
-		int[] lastSearchedIndex = new int[limit];
-		for (int i = 0; i < limit; i++)
-			lastSearchedIndex[i] = (searchedInfos[start + i].index << 8) | (searchedInfos[start + i].matchPhoneID & 0xFF);
-		String[] resultArray = getPhoneHightLights(domainAdr, lastSearchedIndex, keyText, dyeStr);
-		for (int i = 0; i < limit; i++)
-			searchedInfos[start + i].dyePhone = resultArray[i];
-	}
-	
 	/**
 	 * @param searchedInfos
 	 *            已搜出的结果集合
@@ -144,59 +127,6 @@ public class SearchPy<T>
 			}
 			
 		}
-	}
-	
-	//*----------------------------------------------------------------
-	/**
-	 * @param searchedInfos
-	 *            已搜出的结果集合
-	 * @param start
-	 *            着色操作在结果集合中的起始位置
-	 * @param limit
-	 *            着色操作的数量限定
-	 * @param keyText
-	 *            搜索时使用的KeyWord
-	 * @param dyeStr
-	 *            结果使用的着色编码 eg.{<font color=#D64206>}
-	 * @author ZhangZhuo
-	 * @description 此方法只提供姓名与姓名对应的拼音进行着色，不对号码等匹配进行处理。
-	 */
-	public void javaGetPyHighLights(SearchInfo<T>[] searchedInfos, int start, int limit, String keyText, String dyeStr, boolean isT9) {
-		if (searchedInfos.length == 0) throw new IllegalArgumentException("No searched!");
-		if (start >= searchedInfos.length || start < 0) throw new ArrayIndexOutOfBoundsException();
-		if (start + limit >= searchedInfos.length) limit = searchedInfos.length - start;
-		int[] lastSearchedIndex = new int[limit];
-		for (int i = 0; i < limit; i++)
-			lastSearchedIndex[i] = (searchedInfos[start + i].index << 8) | (searchedInfos[start + i].matchPhoneID & 0xFF);
-		String[] resultArray = getPyHightLights(domainAdr, lastSearchedIndex, keyText, dyeStr, isT9);
-		for (int i = 0; i < limit; i++)
-			searchedInfos[start + i].dyeName = resultArray[i];
-	}
-	
-	/**
-	 * @param searchedInfos
-	 *            已搜出的结果集合
-	 * @param start
-	 *            着色操作在结果集合中的起始位置
-	 * @param limit
-	 *            着色操作的数量限定
-	 * @param keyText
-	 *            搜索时使用的KeyWord
-	 * @param dyeStr
-	 *            结果使用的着色编码 eg.{<font color=#D64206>}
-	 * @author ZhangZhuo
-	 * @description 此方法只提供对名字进行着色，不对姓名对应的拼音进行处理，号码也不在处理范围之内。
-	 */
-	public void javaGetNameHighLights(SearchInfo<T>[] searchedInfos, int start, int limit, String keyText, String dyeStr, boolean isT9) {
-		if (searchedInfos.length == 0) throw new IllegalArgumentException("No searched!");
-		if (start >= searchedInfos.length || start < 0) throw new ArrayIndexOutOfBoundsException();
-		if (start + limit >= searchedInfos.length) limit = searchedInfos.length - start;
-		int[] lastSearchedIndex = new int[limit];
-		for (int i = 0; i < limit; i++)
-			lastSearchedIndex[i] = (searchedInfos[start + i].index << 8) | (searchedInfos[start + i].matchPhoneID & 0xFF);
-		String[] resultArray = getNameHightLights(domainAdr, lastSearchedIndex, keyText, dyeStr, isT9);
-		for (int i = 0; i < limit; i++)
-			searchedInfos[start + i].dyeName = resultArray[i];
 	}
 	
 	/**
@@ -286,7 +216,8 @@ public class SearchPy<T>
 		SearchInfo<T>[] resultName, resultPhone;
 		int nameArrayLength = 0, phoneArrayLength = 0;
 		MATCH_TYPE matchType = MATCH_TYPE.NameMatch;
-		for (int j = 0, primaryKey = -1; j < resultArray.length; j++)//primaryKey =-1时用来隔开姓名匹配结果和号码匹配结果
+		for (int j = 0, primaryKey = -1; j < resultArray.length; j++)// primaryKey
+		                                                             // =-1时用来隔开姓名匹配结果和号码匹配结果
 		{
 			primaryKey = resultArray[j];
 			if (primaryKey < 0)
@@ -304,7 +235,8 @@ public class SearchPy<T>
 		result[Result.FOR_NAME.ordinal()] = resultName;
 		result[Result.FOR_PHONE.ordinal()] = resultPhone;
 		matchType = MATCH_TYPE.NameMatch;
-		for (int i = 0, j = 0, m = 0, n = 0, primaryKey = -1, phoneIndex = -1; j < resultArray.length; j++)//primaryKey =-1时用来隔开姓名匹配结果和号码匹配结果
+		for (int i = 0, j = 0, m = 0, n = 0, primaryKey = -1, phoneIndex = -1; j < resultArray.length; j++)// primaryKey
+		                                                                                                   // =-1时用来隔开姓名匹配结果和号码匹配结果
 		{
 			primaryKey = resultArray[j];
 			if (primaryKey < 0)
@@ -352,7 +284,8 @@ public class SearchPy<T>
 		@SuppressWarnings ("unchecked")
 		SearchInfo<T>[] result = new SearchInfo[resultArray.length - 1];
 		MATCH_TYPE matchType = MATCH_TYPE.NameMatch;
-		for (int i = 0, j = 0, primaryKey = -1, phoneIndex = -1; j < resultArray.length; j++)//primaryKey =-1时用来隔开姓名匹配结果和号码匹配结果
+		for (int i = 0, j = 0, primaryKey = -1, phoneIndex = -1; j < resultArray.length; j++)// primaryKey
+		                                                                                     // =-1时用来隔开姓名匹配结果和号码匹配结果
 		{
 			primaryKey = resultArray[j];
 			if (primaryKey < 0)

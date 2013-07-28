@@ -45,6 +45,7 @@ public class LSocketTask
         implements
         ISelectorX
 {
+	String                                   tag       = "LST";
 	static LSocketTask                       singleInstance;
 	public final static int                  SerialNum = CSocketTask.SerialNum + 1;
 	
@@ -89,8 +90,7 @@ public class LSocketTask
 		toRegister.offer(cSocketTask);
 	}
 	
-	private Thread  myThread;
-	private boolean shutdown;
+	private Thread myThread;
 	
 	@Override
 	public final void run() throws Exception {
@@ -108,14 +108,13 @@ public class LSocketTask
 			//#debug
 			base.tina.core.log.LogPrinter.d("selector_err", "swap selector key size: " + selector.keys().size());
 		}
-		this.shutdown = false;
 		CSocketTask cSocketTask;
 		do
 		{
 			cSocketTask = toRegister.poll();
 			if (cSocketTask == null) continue;
-			NioSocketICon connection = cSocketTask.ioSession.getConnection();
-			if (cSocketTask.ioSession != null && !cSocketTask.ioSession.disconnect.get() && !cSocketTask.hasError() && connection != null)
+			NioSocketICon connection;
+			if (cSocketTask.ioSession != null && !cSocketTask.ioSession.disconnect.get() && !cSocketTask.hasError() && (connection = cSocketTask.ioSession.getConnection()) != null)
 			{
 				connection.setSelectorX(this);
 				connection.registerRead(cSocketTask.ioSession);
@@ -138,9 +137,10 @@ public class LSocketTask
 			NioSocketICon connection = socketTask.ioSession.getConnection();
 			connection.setInterestedInWrite(true);
 		}
-		
+		if (wakenUp.get()) selector.wakeup();
+		//#debug 
+		base.tina.core.log.LogPrinter.d(tag, "before select");
 		waitStart = System.currentTimeMillis();
-		if (wakenUp.getAndSet(false)) selector.wakeup();
 		int selectedCount;
 		if (delayTime > 0)
 		{
@@ -151,17 +151,22 @@ public class LSocketTask
 		else selectedCount = selector.select();
 		delayTime = -1;
 		idleTime = System.currentTimeMillis() - waitStart;
+		//#debug 
+		base.tina.core.log.LogPrinter.d(tag, "after select" + " idle: " + idleTime + " | wakenup: " + wakenUp.get());
+		
 		// ----------------------------------------------------------------------------------
 		/**
 		 * @author Zhangzhuo Fix selector(long time) no block bug
 		 */
-		if (idleTime < 50 && selectedCount == 0)
+		if (idleTime < 50 && selectedCount == 0 && !wakenUp.get())
 		{
+			//#debug
+			base.tina.core.log.LogPrinter.w(tag, "select error count zero: idle [" + idleTime + "/ms]");
 			synchronized (myThread)
 			{
 				try
 				{
-					myThread.wait(1000);
+					myThread.wait(500);
 				}
 				catch (InterruptedException e)
 				{
@@ -177,7 +182,6 @@ public class LSocketTask
 				if (closeAllsession)
 				{
 					selectorECount = 0;
-					this.shutdown = true;
 					for (;;)
 					{
 						boolean dis = hasDisConnect.get();
@@ -185,7 +189,6 @@ public class LSocketTask
 					}
 				}
 				Set<SelectionKey> keys = selector.keys();
-				boolean shutdown = true;
 				if (!keys.isEmpty())
 				{
 					selectorX = SelectorProvider.provider().openSelector();
@@ -210,7 +213,6 @@ public class LSocketTask
 							}
 							else
 							{
-								shutdown = false;
 								NioSocketICon iCon = ioSession.getConnection();
 								iCon.setSelectorX(this);
 								iCon.registerRead(ioSession);
@@ -220,16 +222,18 @@ public class LSocketTask
 					}
 					swap_selector = selectorX;
 				}
-				this.shutdown = shutdown;
 				selectorError = 0;
-				if (!closeAllsession && !this.shutdown) return;
+				if (!closeAllsession) return;
 			}
 		}
 		else selectorError = 0;
-		
 		// ----------------------------------------------------------------------------------
+		wakenUp.compareAndSet(true, false);
 		if (selectedCount > 0)
 		{
+			//#debug info 
+			base.tina.core.log.LogPrinter.i(tag, "select - normal");
+			
 			Set<SelectionKey> keys = selector.selectedKeys();
 			for (Iterator<SelectionKey> iter = keys.iterator(); iter.hasNext();)
 			{
@@ -313,7 +317,6 @@ public class LSocketTask
 		
 		if (hasDisConnect.get())
 		{
-			hasDisConnect.set(false);
 			Set<SelectionKey> keys = selector.keys();
 			if (keys.size() > 0)
 			{
@@ -344,19 +347,10 @@ public class LSocketTask
 				}
 				scheduleService.commitNotify();
 			}
-		}
-		if (this.shutdown)
-		{
-			synchronized (myThread)
+			for (;;)
 			{
-				try
-				{
-					myThread.wait();
-				}
-				catch (InterruptedException e)
-				{
-					//Ignore
-				}
+				boolean con = !hasDisConnect.get();
+				if (con || hasDisConnect.compareAndSet(true, false)) break;
 			}
 		}
 	}
@@ -368,8 +362,9 @@ public class LSocketTask
 	
 	@Override
 	public final void wakeUp() {
-		if (wakenUp.compareAndSet(false, true) && selector != null && selector.isOpen()) selector.wakeup();
-		else if (myThread != null) myThread.interrupt();
+		//#debug
+		base.tina.core.log.LogPrinter.i(tag, "wakenup: " + wakenUp.get());
+		if (!wakenUp.get() && selector != null && selector.isOpen() && wakenUp.compareAndSet(false, true)) selector.wakeup();
 	}
 	
 	@Override
@@ -552,6 +547,8 @@ public class LSocketTask
 				{
 					//#debug warn
 					e.printStackTrace();
+					//#debug
+					base.tina.core.log.LogPrinter.w(null, e.getMessage(), e);
 					socketTask.setError(e);
 				}
 				else socketTask.setError(new ClosedChannelException());

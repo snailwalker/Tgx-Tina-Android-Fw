@@ -17,7 +17,6 @@ package base.tina.core.task;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import base.tina.core.task.infc.ITaskResult;
 
@@ -26,10 +25,10 @@ public abstract class AbstractResult
         implements
         ITaskResult
 {
-	private final AtomicBoolean isInResponseQueue = new AtomicBoolean(false);
-	private int                 bindSerial;
-	private volatile Exception  exception;
-	protected volatile boolean  disposable        = true;
+	private volatile boolean   isInResponseQueue;
+	private int                bindSerial;
+	private volatile Exception exception;
+	protected volatile boolean disposable = true;
 	
 	/**
 	 * 任何获得isDisposable()接口许可 或者 在ResponseQueue中未经处理的Result都将默认执行此操作
@@ -38,30 +37,32 @@ public abstract class AbstractResult
 	public void dispose() {
 		exception = null;
 		if (attributes != null) attributes.clear();
+		attributes = null;
+		
 	}
 	
 	@Override
-	public void setResponse(boolean reset) {
-		for (;;)
-		{
-			boolean inQueue = isInResponseQueue.get();
-			if (reset && (!inQueue || isInResponseQueue.compareAndSet(true, false))) break;
-			else if (!reset && (inQueue || isInResponseQueue.compareAndSet(false, true))) break;
-		}
+	public final void lockResponsed() {
+		isInResponseQueue = true;
 	}
 	
 	@Override
-	public boolean isResponsed() {
-		return isInResponseQueue.get();
+	public final void unlockResponsed() {
+		isInResponseQueue = false;
 	}
 	
 	@Override
-	public void setListenSerial(int bindSerial) {
+	public final boolean isResponsed() {
+		return isInResponseQueue;
+	}
+	
+	@Override
+	public final void setListenSerial(int bindSerial) {
 		this.bindSerial = bindSerial;
 	}
 	
 	@Override
-	public int getListenSerial() {
+	public final int getListenSerial() {
 		return bindSerial;
 	}
 	
@@ -88,24 +89,24 @@ public abstract class AbstractResult
 	private Map<String, Object> attributes;
 	
 	@Override
-	public void setAttributes(Map<String, Object> map) {
+	public final void setAttributes(Map<String, Object> map) {
 		attributes = map;
 	}
 	
 	@Override
-	public Object getAttribute(String key) {
+	public final Object getAttribute(String key) {
 		if (attributes == null || attributes.isEmpty()) return null;
 		return attributes.get(key);
 	}
 	
 	@Override
-	public void setAttribute(String key, Object value) {
+	public final void setAttribute(String key, Object value) {
 		if (attributes == null) attributes = new HashMap<String, Object>(2, 0.5f);
 		attributes.put(key, value);
 	}
 	
 	@Override
-	public boolean otherHandler() {
+	public boolean canOtherHandle() {
 		return true;
 	}
 }

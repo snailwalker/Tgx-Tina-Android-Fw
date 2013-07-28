@@ -16,26 +16,25 @@
 package base.tina.core.log;
 
 import base.tina.core.log.ILogPrinter.Level;
-import base.tina.core.task.AbstractListener;
 
 
-public abstract class AbstractLogSetting
-        extends
-        AbstractListener
+public interface ILogSetting
+
 {
 	
-	public static Level    logLevel = Level.VERBOSE;
-	public static int      priority = Level.VERBOSE.ordinal();
-	/**
-	 * 是否进行逐行输出到服务器的操作
-	 */
-	private static boolean RemotePrint;
+	public final static int verbose  = 0;
+	public final static int debug    = verbose + 1;
+	public final static int info     = debug + 1;
+	public final static int warn     = info + 1;
+	public final static int error    = warn + 1;
+	public final static int fatal    = error + 1;
+	public final static int ui       = fatal + 1;
+	public final static int silent   = ui + 1;
 	
-	public final static void enableRPrint() {
-		RemotePrint = true;
-	}
+	public static int       priority = verbose;
+	public static Level     logLevel = Level.VERBOSE;
 	
-	public final static boolean isRemotePrint() {
-		return RemotePrint;
-	}
+	public void enableRPrint();
+	
+	public boolean isRemotePrint();
 }

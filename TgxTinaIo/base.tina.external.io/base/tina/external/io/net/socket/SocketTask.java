@@ -56,11 +56,16 @@ public class SocketTask
 		if (ioSession != null)
 		{
 			if (ioSession.status.equals(IoSession.Status.UNREALIZED) || ioSession.status.equals(IoSession.Status.INVAILD)) throw new IllegalStateException("iosession is invaild!");
-			if (ioSession.disconnect.get()) throw new ClosedChannelException();
 			LSocketTask lSocketTask = LSocketTask.open();
-			lSocketTask.offerWrite(this);
+			if (ioSession.disconnect.get())
+			{
+				setError(new ClosedChannelException());
+				lSocketTask.hasDisConnect.set(true);
+			}
+			else lSocketTask.offerWrite(this);
 			if (!lSocketTask.isInit() && !scheduleService.requestService(lSocketTask, true, 0)) throw new IllegalStateException("LSocketTask is invalid");
 			else lSocketTask.wakeUp();
+			if (hasError()) throw getError();
 		}
 		else
 		{

@@ -1,9 +1,11 @@
+import java.util.concurrent.TimeUnit;
+
 import base.tina.core.log.LogPrinter;
 import base.tina.core.log.SimplePrinter;
+import base.tina.core.task.Task;
 import base.tina.core.task.TaskService;
 import base.tina.core.task.infc.ITaskListener;
 import base.tina.core.task.infc.ITaskResult;
-import base.tina.core.task.timer.TimerTask;
 
 
 public class TestTimeTask
@@ -19,30 +21,39 @@ public class TestTimeTask
 	public static void main(String[] args) {
 		LogPrinter.setIPrinter(new SimplePrinter());
 		final TestTimeTask test = new TestTimeTask();
-		TimerTask t;
-		test.requestService(t = new TimerTask(4)
+		test.requestService(new TestTask1(), false);
+		for (int i = 0; i < 10; i++)
 		{
-			
-			@Override
-			public int getSerialNum() {
-				return 0x9900;
-			}
-			
-			@Override
-			protected boolean doTimeMethod() {
-				LogPrinter.d(null, "do:" + "--" + hashCode());
-				return false;
-			}
-		}, test.getBindSerial());
-		for (;;)
+			test.requestService(new TestTask2(), false);
 			try
 			{
-				Thread.sleep(1000);
-				t.refresh(2);
+				Thread.sleep(TimeUnit.SECONDS.toMillis(1));
 			}
 			catch (Exception e)
 			{
+				// ignore
 			}
+		}
+		try
+		{
+			Thread.sleep(TimeUnit.SECONDS.toMillis(15));
+		}
+		catch (Exception e)
+		{
+			// ignore
+		}
+		for (int i = 0; i < 10; i++)
+		{
+			test.requestService(new TestTask2(), false);
+			try
+			{
+				Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+			}
+			catch (Exception e)
+			{
+				// ignore
+			}
+		}
 		
 	}
 	
@@ -79,5 +90,84 @@ public class TestTimeTask
 		return SerialNum;
 	}
 	
-	final static int SerialNum = 0x011122;
+	final static int SerialNum = 0x111222;
+	
+	static class TestTask1
+	        extends
+	        Task
+	{
+		
+		public TestTask1() {
+			super(SerialNum);
+		}
+		
+		@Override
+		public void initTask() {
+			isBloker = true;
+			isCycle = true;
+			super.initTask();
+		}
+		
+		@Override
+		public void run() throws Exception {
+			synchronized (this)
+			{
+				try
+				{
+					wait(TimeUnit.SECONDS.toMillis(30));
+				}
+				catch (InterruptedException e)
+				{
+					//Ignore
+				}
+			}
+			LogPrinter.d(null, "Task1 -- run ok");
+		}
+		
+		final static int SerialNum = -0xFFFF01;
+		
+		@Override
+		public int getSerialNum() {
+			return SerialNum;
+		}
+		
+	}
+	
+	static class TestTask2
+	        extends
+	        Task
+	{
+		
+		public TestTask2() {
+			super(SerialNum);
+		}
+		
+		@Override
+		public void initTask() {
+			isBloker = true;
+			super.initTask();
+		}
+		
+		@Override
+		public void run() throws Exception {
+			synchronized (this)
+			{
+				try
+				{
+					wait(TimeUnit.SECONDS.toMillis(2));
+				}
+				catch (InterruptedException e)
+				{
+					//Ignore
+				}
+			}
+		}
+		
+		final static int SerialNum = -0xFFFF02;
+		
+		@Override
+		public int getSerialNum() {
+			return SerialNum;
+		}
+	}
 }

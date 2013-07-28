@@ -57,6 +57,10 @@ public class TaskService
         Comparator<Task>,
         IDisposable
 {
+	
+	//#debug fatal
+	String                                   tag                    = "TS";
+	
 	final static byte                        SERVICE_TASK_INIT      = -1;
 	final static byte                        SERVICE_PROCESSING     = SERVICE_TASK_INIT + 1;
 	final static byte                        SERVICE_SCHEDULE       = SERVICE_PROCESSING + 1;
@@ -213,7 +217,7 @@ public class TaskService
 		task.priority = schedule ? mainQueue.priorityIncrease.incrementAndGet() : 0;
 		boolean success = mainQueue.offer(task);
 		//#debug
-		base.tina.core.log.LogPrinter.d(null, "offer: " + success);
+		base.tina.core.log.LogPrinter.d(null, task.getClass().getSimpleName() + "@" + Integer.toHexString(task.hashCode()) + " offer: " + success);
 		return success;
 	}
 	
@@ -264,8 +268,10 @@ public class TaskService
 	final boolean responseTask(ITaskResult taskResult) {
 		if (taskResult == null) return false;
 		if (taskResult.isResponsed()) return false;
-		taskResult.setResponse(false);
-		return responseQueue.offer(taskResult);
+		taskResult.lockResponsed();
+		boolean offered = responseQueue.offer(taskResult);
+		if (!offered) taskResult.unlockResponsed();
+		return offered;
 	}
 	
 	public final void commitNotify() {
@@ -294,13 +300,12 @@ public class TaskService
 			while (!responseQueue.isEmpty())
 			{
 				receive = responseQueue.poll();
-				receive.setResponse(true);
+				receive.unlockResponsed();
 				//#debug info
 				base.tina.core.log.LogPrinter.i(null, "response notify: " + receive + "->" + (receive.hasError() ? "excaught" : "handle"));
 				isHandled = false;
 				if (!listeners.isEmpty())
 				{
-					
 					int listenSerial = receive.getListenSerial();
 					if (listenSerial != 0)
 					{
@@ -328,7 +333,7 @@ public class TaskService
 							//#endif
 						}
 					}
-					if (!isHandled && receive.otherHandler()) for (ITaskListener listener : listeners.values())
+					if (!isHandled && receive.canOtherHandle()) for (ITaskListener listener : listeners.values())
 					{
 						if (!listener.isEnable()) continue;
 						try
@@ -551,7 +556,7 @@ public class TaskService
 			corePoolSize = 0;
 			allowCoreThreadTimeOut = true;
 			maximumPoolSize = 1024;
-			keepAliveTime = TimeUnit.SECONDS.toNanos(1);
+			keepAliveTime = TimeUnit.SECONDS.toNanos(10);
 			workQueue = new SynchronousQueue<Task>();
 			this.mainQueue = mainQueue;
 		}
@@ -569,7 +574,7 @@ public class TaskService
 			@Override
 			public Thread newThread(Runnable r) {
 				if (id.get() == maximumPoolSize) id.set(0);
-				return new Thread(r, "TaskService" + "-pool-" + id.getAndIncrement());
+				return new Thread(r, "Executor-TGX" + "-pool-" + id.getAndIncrement());
 			}
 		}
 		
@@ -582,12 +587,8 @@ public class TaskService
 		}
 		
 		private void decrementWorkerCount() {
-			do
-			{
-				//#debug
-				base.tina.core.log.LogPrinter.d(null, "decrementWorkerCount--:" + ctl.get());
-			}
-			while (!compareAndDecrementWorkerCount(ctl.get()));
+			while (!compareAndDecrementWorkerCount(ctl.get()))
+				;
 		}
 		
 		public void execute(Task task) {
@@ -599,8 +600,10 @@ public class TaskService
 				try
 				{
 					Worker worker = id2work2.get(task.threadId);
-					if (worker != null && worker.taskBlkQueue.offer(task))
+					if (worker != null && worker.available && worker.taskBlkQueue.offer(task))
 					{
+						//#debug
+						base.tina.core.log.LogPrinter.d(tag, "Thread-Name: " + worker.thread.getName() + " | worker-TID: " + worker.taskThreadId + " execute: " + task);
 						worker.thread.interrupt();
 						return;
 					}
@@ -641,7 +644,7 @@ public class TaskService
 				int rs = runStateOf(c);
 				
 				// Check if queue empty only if necessary.
-				if (rs >= SHUTDOWN && (rs >= STOP || workQueue.isEmpty()))
+				if (rs >= SHUTDOWN && (rs >= STOP || (workQueue.isEmpty() && w.taskBlkQueue.isEmpty())))
 				{
 					decrementWorkerCount();
 					return null;
@@ -657,8 +660,7 @@ public class TaskService
 					if (compareAndDecrementWorkerCount(c)) return null;
 					c = ctl.get(); // Re-read ctl
 					if (runStateOf(c) != rs) continue retry;
-					// else CAS failed due to workerCount change; retry inner
-					// loop
+					// else CAS failed due to workerCount change; retry inner loop
 				}
 				
 				try
@@ -666,6 +668,8 @@ public class TaskService
 					Task t = null;
 					if (w.taskThreadId != 0) t = w.taskBlkQueue.poll(keepAliveTime, TimeUnit.NANOSECONDS);
 					if (t == null) t = timed ? workQueue.poll(keepAliveTime, TimeUnit.NANOSECONDS) : workQueue.take();
+					//#debug 
+					base.tina.core.log.LogPrinter.d(tag, "getTask TID: " + w.taskThreadId + " Task: " + (t != null ? t.toString() : "null"));
 					if (t != null) return t;
 					timedOut = true;
 				}
@@ -677,24 +681,21 @@ public class TaskService
 		}
 		
 		private void processWorkerExit(Worker w, boolean completedAbruptly) {
-			if (completedAbruptly) // If abrupt, then workerCount wasn't
-			                       // adjusted
+			if (completedAbruptly) // If abrupt, then workerCount wasn't adjusted
 			decrementWorkerCount();
-			
 			final ReentrantLock mainLock = this.mainLock;
 			mainLock.lock();
 			try
 			{
 				completedTaskCount += w.completedTasks;
 				workers.remove(w);
+				
 			}
 			finally
 			{
 				mainLock.unlock();
 			}
-			
 			tryTerminate();
-			
 			int c = ctl.get();
 			if (runStateLessThan(c, STOP))
 			{
@@ -702,8 +703,7 @@ public class TaskService
 				{
 					int min = allowCoreThreadTimeOut ? 0 : corePoolSize;
 					if (min == 0 && !workQueue.isEmpty()) min = 1;
-					if (workerCountOf(c) >= min) return; // replacement not
-					                                     // needed
+					if (workerCountOf(c) >= min) return; // replacement not needed
 				}
 				addWorker(null, false);
 			}
@@ -788,8 +788,7 @@ public class TaskService
 					if (compareAndIncrementWorkerCount(c)) break retry;
 					c = ctl.get(); // Re-read ctl
 					if (runStateOf(c) != rs) continue retry;
-					// else CAS failed due to workerCount change; retry inner
-					// loop
+					// else CAS failed due to workerCount change; retry inner loop
 				}
 			}
 			
@@ -829,7 +828,6 @@ public class TaskService
 			// because Thread.interrupt is not guaranteed to have any effect
 			// interrupt).
 			if (runStateOf(ctl.get()) == STOP && !t.isInterrupted()) t.interrupt();
-			
 			return true;
 		}
 		
@@ -906,12 +904,22 @@ public class TaskService
 			volatile long             completedTasks;
 			IWakeLock                 wakeLock;
 			Thread                    thread;
+			boolean                   available;
+			
+			void clear() {
+				taskBlkQueue.clear();
+				firstTask = null;
+				lastTask = null;
+				thread = null;
+				wakeLock = null;
+			}
 			
 			public Worker(Task task) {
 				firstTask = task;
 				taskBlkQueue = new LinkedBlockingQueue<Task>();
 				wakeLock = getWakeLock();
 				thread = threadFactory.newThread(this);
+				available = true;
 				if (wakeLock != null && thread != null) wakeLock.initialize("worker#" + thread.getId());
 			}
 			
@@ -953,8 +961,8 @@ public class TaskService
 			@Override
 			public void run() {
 				runWorker(this);
+				available = false;
 			}
-			
 		}
 		
 		final void runWorker(Worker w) {
@@ -970,6 +978,8 @@ public class TaskService
 					while (task != null || (task = getTask(w)) != null)
 					{
 						lastTask = task;
+						//#debug 
+						base.tina.core.log.LogPrinter.d(tag, "3 runWorker: " + w.thread.getName() + " TID: " + w.taskThreadId + " task TID: " + task.threadId);
 						w.lock();
 						clearInterruptsForTaskRun();
 						try
@@ -983,14 +993,15 @@ public class TaskService
 								{
 									w.taskThreadId = task.threadId;
 									id2work2.put(w.taskThreadId, w);
+									//#debug 
+									base.tina.core.log.LogPrinter.d(tag, "3 put worker TID: " + w.taskThreadId);
 								}
 								finally
 								{
 									lock.unlock();
 								}
 							}
-							if (task.wakeLock && w.wakeLock != null) w.wakeLock.acquire();// 并非所有的任务都强制要求cpu
-							                                                              // 唤醒状态保护.
+							if (task.wakeLock && w.wakeLock != null) w.wakeLock.acquire();// 并非所有的任务都强制要求cpu 唤醒状态保护.
 							try
 							{
 								task.beforeRun();
@@ -1038,9 +1049,12 @@ public class TaskService
 					lock.lock();
 					try
 					{
-						if (w.taskBlkQueue.isEmpty())
+						if (w.taskThreadId != 0 && w.taskBlkQueue.isEmpty())
 						{
+							
 							id2work2.remove(w.taskThreadId);
+							//#debug 
+							base.tina.core.log.LogPrinter.d(tag, "id2work2 remove " + "TID: " + w.taskThreadId);
 							w.taskThreadId = 0;
 							break workLoop;
 						}
@@ -1071,6 +1085,8 @@ public class TaskService
 						lock.unlock();
 					}
 				}
+				//#debug
+				base.tina.core.log.LogPrinter.d(tag, "End worklooper: " + Thread.currentThread().getName());
 				if (lastTask != null)
 				{
 					lastTask.finishThreadTask();

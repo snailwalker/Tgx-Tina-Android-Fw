@@ -15,8 +15,6 @@
  *******************************************************************************/
 package com.tgx.tina.android.plugin.contacts.sync;
 
-import java.util.Locale;
-
 import android.provider.ContactsContract;
 import base.tina.external.io.IoUtil;
 
@@ -731,10 +729,6 @@ public class RawContactProfile
 					{
 						tmp[MIMETYPE_INDEX] = String.valueOf(ContactsContract.CommonDataKinds.StructuredPostal.TYPE_WORK);
 					}
-					else if (arg.startsWith("LABEL"))
-					{
-						tmp[ADDRESS_LABEL] = IoUtil.splitString(arg, "=", 2)[FIELD_VALUE];
-					}
 					else
 					{
 						tmp[MIMETYPE_INDEX] = String.valueOf(ContactsContract.CommonDataKinds.StructuredPostal.TYPE_OTHER);
@@ -922,6 +916,7 @@ public class RawContactProfile
 						}
 						else if (arg.startsWith("LABEL"))
 						{
+							
 							tmp[SUB_CONTENT_INDEX] = IoUtil.splitString(arg, "=", 2)[FIELD_VALUE];
 						}
 					}
@@ -1041,7 +1036,7 @@ public class RawContactProfile
 						{
 							tmp[MIMETYPE_INDEX] = String.valueOf(ContactsContract.CommonDataKinds.Organization.TYPE_OTHER);
 						}
-						else if (arg.toUpperCase(Locale.US).startsWith("LABEL＝"))
+						else if (arg.startsWith("LABEL"))
 						{
 							tmp[MIMETYPE_INDEX] = String.valueOf(ContactsContract.CommonDataKinds.Organization.TYPE_CUSTOM);
 							tmp[SUB_CONTENT_INDEX] = IoUtil.splitString(arg, "=", 2)[FIELD_VALUE];

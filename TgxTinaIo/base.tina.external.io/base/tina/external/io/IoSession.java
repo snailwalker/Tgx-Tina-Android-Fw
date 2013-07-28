@@ -169,7 +169,7 @@ public class IoSession<E extends IConnection>
 	}
 	
 	@Override
-	public boolean otherHandler() {
+	public boolean canOtherHandle() {
 		return false;
 	}
 }

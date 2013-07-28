@@ -104,8 +104,6 @@ public class AndroidPrinter
 		LogPrinter.e(null, ex);
 		try
 		{
-			LogPrinter.i(null, "wait");
-			
 			Thread.sleep(3000);
 			LogPrinter.actorClose();
 		}
@@ -141,7 +139,6 @@ public class AndroidPrinter
 			{
 				java.io.File logDir = new File(LOG_DIR);
 				if (!logDir.exists()) logDir.mkdirs();
-				
 				java.io.File logFile = new File(LOG_DIR + "/" + fileName);
 				if (!logFile.exists()) logFile.createNewFile();
 				logFileName = logFile.getAbsolutePath();

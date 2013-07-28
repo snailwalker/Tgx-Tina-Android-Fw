@@ -20,7 +20,8 @@ public abstract class BaseApp<T extends BaseBridge>
 		super.onCreate();
 		AndroidPrinter.createByApp(getApplicationContext());
 		bridge = bindBridge(getApplicationContext());
-		mAService = isServiceRemote() ? new ATaskService() : BaseService.getInstance().mAService;
+		BaseService remoteService = BaseService.getInstance();
+		mAService = isServiceRemote() || remoteService == null ? new ATaskService() : remoteService.mAService;
 	}
 	
 	public ATaskService getMainScheduler() {

@@ -36,15 +36,15 @@ public class ATaskService
         extends
         TaskService
 {
-	PowerManager            powerManager;
-	PowerManager.WakeLock   mainWakeLock;
-	AlarmManager            alarmManager;
+	PowerManager             powerManager;
+	PowerManager.WakeLock    mainWakeLock;
+	AlarmManager             alarmManager;
 	//#debug
-	volatile long           preWakeTime;
-	final static long       AlarmGap   = TimeUnit.SECONDS.toMillis(600);
-	Context                 context;
-	private boolean         isScreenOn = true;
-	final BroadcastReceiver screenReceiver;
+	volatile long            preWakeTime;
+	final static long        AlarmGap   = TimeUnit.SECONDS.toMillis(600);
+	Context                  context;
+	private volatile boolean isScreenOn = true;
+	final BroadcastReceiver  screenReceiver;
 	
 	public ATaskService() {
 		super();
@@ -125,7 +125,7 @@ public class ATaskService
 		if (alarmSender != null) alarmManager.cancel(alarmSender);
 		if (RTC_WakeTime < 0) RTC_WakeTime = System.currentTimeMillis() + AlarmGap;
 		alarmSender = getAlarmSet();
-		alarmManager.set(AlarmManager.RTC_WAKEUP, RTC_WakeTime, alarmSender);
+		if (alarmSender != null) alarmManager.set(AlarmManager.RTC_WAKEUP, RTC_WakeTime, alarmSender);
 		wakeUnlock();
 	}
 	
@@ -280,14 +280,29 @@ public class ATaskService
 	
 	private final PendingIntent getAlarmSet() {
 		Intent intent = new Intent(TASK_SCHEDULE_ACTION);
-		PendingIntent pendingIntent = PendingIntent.getBroadcast(context, hashCode(), intent, PendingIntent.FLAG_CANCEL_CURRENT);
-		return pendingIntent;
+		try
+		{
+			PendingIntent pendingIntent = PendingIntent.getBroadcast(context, hashCode(), intent, PendingIntent.FLAG_CANCEL_CURRENT);
+			return pendingIntent;
+		}
+		catch (Exception e)
+		{
+			return null;
+		}
 	}
 	
 	private final PendingIntent getAlarmCancel() {
 		Intent intent = new Intent(TASK_SCHEDULE_ACTION);
-		PendingIntent pendingIntent = PendingIntent.getBroadcast(context, hashCode(), intent, PendingIntent.FLAG_NO_CREATE);
-		return pendingIntent;
+		try
+		{
+			PendingIntent pendingIntent = PendingIntent.getBroadcast(context, hashCode(), intent, PendingIntent.FLAG_NO_CREATE);
+			
+			return pendingIntent;
+		}
+		catch (Exception e)
+		{
+			return null;
+		}
 	}
 	
 	public final void wakeLock() {

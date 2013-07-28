@@ -1,3 +1,18 @@
+/*******************************************************************************
+ * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ *******************************************************************************/
 #include "SearchCore.h"
 #include "SearchTools.h"
 #include "SearchSpellCode.h"
@@ -14,14 +29,12 @@ void searchTreeInit(SearchTree* tree, boolean isInitFIndex, char userMode)
 	tree->matchFunc = NULL;
 	tree->keySearchData = NULL;
 	tree->foreignTreeIndexes = NULL;
-	if (isInitFIndex)
-	{
+	if (isInitFIndex) {
 		tree->foreignTreeIndexes = (ArrayList*) malloc(SIZEOF_ARRAYLIST);
 	}
 	initArrayCapacity(&tree->searchDatas, 512); //初始化到16K 空间量
 
-	for (i = 0; i < CachedHitNum; i++)
-	{
+	for (i = 0; i < CachedHitNum; i++) {
 		initArrayCapacity(&(tree->firstSpellIndex[i]), 256);
 	}
 	initLinked(&(tree->searchPosQueue));
@@ -36,10 +49,8 @@ int ucLength(const uchar* text)
 {
 	int length = 0;
 	int i = 0;
-	if (text)
-	{
-		while (text[i++] != '\0')
-		{
+	if (text) {
+		while (text[i++] != '\0') {
 			length++;
 		}
 	}
@@ -50,10 +61,8 @@ int cLength(const char* text)
 {
 	int length = 0;
 	int i = 0;
-	if (text)
-	{
-		while (text[i++] != '\0')
-		{
+	if (text) {
+		while (text[i++] != '\0') {
 			length++;
 		}
 	}
@@ -66,13 +75,13 @@ int findIndexInMultiPYin(uchar key)
 	int high = MultiPyCodeCount - 1;
 	int mid = 0;
 	uchar midVal = 0;
-	while (low <= high)
-	{
+	while (low <= high) {
 		mid = (low + high) >> 1;
 		midVal = MultiPinyinIndex[mid][0];
 		if (midVal < key) low = mid + 1;
 		else if (midVal > key) high = mid - 1;
-		else return mid; // key found
+		else
+			return mid; // key found
 	}
 	return -(low + 1); // key not found.
 }
@@ -92,88 +101,73 @@ int word2Code(uchar srcWord, WordCode* code, int charIndex)
 	code->pyCodeIndex = NULL;
 	code->wordUnicode = 0;
 
-	if (t1 == 0 && t2 < 128)
-	{
+	if (t1 == 0 && t2 < 128) {
 		//Ascii
 		word = t2;
 
 		// 转换到小写
-		if (word >= 'A' && word <= 'Z')
-		{
+		if (word >= 'A' && word <= 'Z') {
 			word = word + CapsOff;
 		}
 		code->wordUnicode = word;
 		sortKey = word < 'a' || word > 'z' ? PyCodeNum + 1 : CharCodeIndex[word - 'a'];
 	}
-	else if (t1 == 255)
-	{
+	else if (t1 == 255) {
 		// 全角ASCII
 		//转换到半角区
 		t2 = t2 + 0x20;
 		word = t2;
 		code->srcUnicode = word;
-		if (word >= 'A' && word <= 'Z')
-		{
+		if (word >= 'A' && word <= 'Z') {
 			word = word + CapsOff;
 		}
 		code->wordUnicode = word;
 		sortKey = word < 'a' || word > 'z' ? PyCodeNum + 1 : CharCodeIndex[word - 'a'];
 	}
-	else if (t1 >= 78 && t1 <= 159)
-	{
+	else if (t1 >= 78 && t1 <= 159) {
 		code->wordUnicode = srcWord;
 		// 一般汉字处理
 		pyIndex = PyCodeIndex[t1 - 78][t2];
 
-		if (pyIndex > 0)
-		{
+		if (pyIndex > 0) {
 			//进行多拼音处理
 
 			tabIndex = findIndexInMultiPYin(srcWord);
-			if (tabIndex >= 0)
-			{
+			if (tabIndex >= 0) {
 				//多音字
 				int multiPyIndex = 0;
-				for (i = 1; i < MaxPyCode; i++)
-				{
+				for (i = 1; i < MaxPyCode; i++) {
 					multiPyIndex = MultiPinyinIndex[tabIndex][i];
-					if (multiPyIndex > 0)
-					{
+					if (multiPyIndex > 0) {
 						pyCodeNum++;
 					}
-					else
-					{
+					else {
 						break;
 					}
 				}
 				code->pyCodeIndex = (short*) malloc(pyCodeNum << 1);
-				for (i = 0; i < pyCodeNum; i++)
-				{
+				for (i = 0; i < pyCodeNum; i++) {
 					multiPyIndex = MultiPinyinIndex[tabIndex][i + 1];
 					code->pyCodeIndex[i] = multiPyIndex;
 				}
 				code->pyCodeNum = code->pyCodeNum | pyCodeNum;
 			}
-			else
-			{
+			else {
 				pyCodeNum = 1;
 				code->pyCodeNum++;
 				code->pyCodeIndex = (short*) malloc(1 << 1);
 				code->pyCodeIndex[0] = pyIndex;
 			}
 		}
-		if ((pyCodeNum & 0x07) > 0)
-		{
+		if ((pyCodeNum & 0x07) > 0) {
 			sortKey = code->pyCodeIndex[0];
 		}
 	}
-	else
-	{
+	else {
 		//其他Unicode字符
 		code->wordUnicode = srcWord;
 	}
-	if (sortKey == 0)
-	{ //全部列入无法整理区
+	if (sortKey == 0) { //全部列入无法整理区
 		sortKey = PyCodeNum + 1;
 	}
 	return sortKey = (sortKey << 16) | code->wordUnicode;
@@ -185,22 +179,17 @@ void text2SearchData(const uchar* text, const int textLength, SearchData *data)
 	if (data == NULL) return;
 	data->codesCount = 0;
 	data->isNameAllDigit = true;
-	for (i = 0; i < textLength; i++)
-	{
-		if (text[i] == 0x20 || text[i] == 0x3000)
-		{
+	for (i = 0; i < textLength; i++) {
+		if (text[i] == 0x20 || text[i] == 0x3000) {
 			continue;
 		}
 		data->codesCount++;
 	}
-	if (text)
-	{
-		data->wordCodes = (WordCode*) malloc(SIZEOF_WORDCODE* data->codesCount);
+	if (text && data->codesCount > 0) {
+		data->wordCodes = (WordCode*) malloc(SIZEOF_WORDCODE * data->codesCount);
 		data->sortKeys = (int*) malloc(sizeof(int) * data->codesCount);
-		for (i = 0, j = 0; i < textLength; i++)
-		{
-			if (text[i] == 0x20 || text[i] == 0x3000)
-			{
+		for (i = 0, j = 0; i < textLength; i++) {
+			if (text[i] == 0x20 || text[i] == 0x3000) {
 				continue;
 			}
 			data->sortKeys[j] = word2Code(text[i], &(data->wordCodes[j]), i);
@@ -217,16 +206,14 @@ int* getInofsPrimaryKeys(SearchTree* tree, ulong64 filter)
 	int i = 0;
 	int* array = NULL;
 	initLinked(&tar);
-	for (i = 0; i < tree->searchDatas.size; i++)
-	{
+	for (i = 0; i < tree->searchDatas.size; i++) {
 		tree->searchDatas.get(&tree->searchDatas, i, &dataToSearch);
 		if (filter != 0 && (dataToSearch->filter & filter) == 0 && dataToSearch->filter != 0) continue;
 		tar.append(&tar, dataToSearch->primaryKey);
 	}
-	if (tar.size == 0)
-	{
+	if (tar.size == 0) {
 		tar.dispose(&tar);
-		return NULL ;
+		return NULL;
 	}
 	int* primaryKeys = malloc((tar.size + 1) * sizeof(int));
 	primaryKeys[0] = tar.size;
@@ -241,33 +228,27 @@ void getFirstPyPrimaryKeys(SearchTree* tree, int* primaryKeys, ulong64 filter)
 	SearchData* dataToSearch = NULL;
 	int i = 0, j = 0, mask = 0x7FFFFFF, t = 0;
 	uchar pyChar = 0;
-	for (i = 0; i < tree->searchDatas.size; i++)
-	{ //如需提升性能可以取一级索引的首项
+	for (i = 0; i < tree->searchDatas.size; i++) { //如需提升性能可以取一级索引的首项
 		tree->searchDatas.get(&tree->searchDatas, i, &dataToSearch);
 		if (filter != 0 && (dataToSearch->filter & filter) == 0) continue;
 		//不需要校验dataToSearch.codesCount;<=0时,初始化时会失败
 
-		if ((dataToSearch->wordCodes[0].pyCodeNum & 0x07) > 0)
-		{ //存在拼音码的,比较拼音
+		if ((dataToSearch->wordCodes[0].pyCodeNum & 0x07) > 0) { //存在拼音码的,比较拼音
 			pyChar = PySpellCode[dataToSearch->wordCodes[0].pyCodeIndex[0]][0];
 		}
-		else
-		{
+		else {
 			pyChar = dataToSearch->wordCodes[0].wordUnicode;
 		}
 		j = pyChar - 'a';
-		if (j >= 0 && j < 26 && primaryKeys[j] < 0)
-		{ //由于searchDatas是有序排列~
+		if (j >= 0 && j < 26 && primaryKeys[j] < 0) { //由于searchDatas是有序排列~
 			primaryKeys[j] = t;
 			mask ^= (1 << j);
 		}
-		else if (j >= 0 && j < 26 && primaryKeys[j] >= 0)
-		{ //已经有数据了
+		else if (j >= 0 && j < 26 && primaryKeys[j] >= 0) { //已经有数据了
 			t++;
 			continue;
 		}
-		else if (primaryKeys[26] < 0)
-		{
+		else if (primaryKeys[26] < 0) {
 			primaryKeys[26] = t;
 			mask ^= 1 << 26;
 		}
@@ -288,15 +269,13 @@ int findSearchData(SearchTree* tree, int primaryKey, SearchData** data)
 
 	SearchData* temp;
 
-	while (low <= high)
-	{
+	while (low <= high) {
 		mid = (low + high) >> 1;
 		ptr->get(ptr, mid, &temp);
 
 		if (temp->primaryKey < primaryKey) low = mid + 1;
 		else if (temp->primaryKey > primaryKey) high = mid - 1;
-		else
-		{
+		else {
 			*data = temp;
 			return mid;
 		}
@@ -312,40 +291,32 @@ int findStorageData2Insert(SearchTree* tree, SearchData* data)
 	int high = ptr->size - 1;
 	SearchData* temp = NULL;
 	int c;
-	if (data == NULL)
-	{
+	if (data == NULL || data->sortKeys == NULL) {
 		return -2;
 	}
-	while (low <= high)
-	{
+	while (low <= high) {
 		mid = (low + high) >> 1;
 		ptr->get(ptr, mid, &temp);
 		c = intsCmp(temp->sortKeys, temp->codesCount, data->sortKeys, data->codesCount);
 		c = c == 0 ? (temp->primaryKey < data->primaryKey ? -1 : (temp->primaryKey > data->primaryKey ? 1 : 0)) : c;
-		if (c < 0)
-		{
+		if (c < 0) {
 			low = mid + 1;
 		}
-		else if (c > 0)
-		{
+		else if (c > 0) {
 			high = mid - 1;
 		}
-		else
-		{
+		else {
 			pos = mid;
 			goto Result;
 		}
 	}
 	pos = -(low + 1);
 
-	Result:
-	{
-		if (pos < 0)
-		{
+	Result: {
+		if (pos < 0) {
 			return (-pos) - 1;
 		}
-		else
-		{
+		else {
 			return -1;
 		}
 	}
@@ -357,41 +328,38 @@ size_t parserPhone(const uchar* srcPhone, char* destBuf, size_t len)
 {
 	if (destBuf == NULL || srcPhone == NULL || len == 0) return 0;
 	size_t i = 0, j = 0;
-	for (i = 0, j = 0; i < len; i++)
-	{
-		if (srcPhone[i] > 0xFF00 && (srcPhone[i] >= 0xFF10 && srcPhone[i] <= 0xFF19))
-		{
+	for (i = 0, j = 0; i < len; i++) {
+		if (srcPhone[i] > 0xFF00 && (srcPhone[i] >= 0xFF10 && srcPhone[i] <= 0xFF19)) {
 			destBuf[j++] = '0' + (srcPhone[i] - 0xFF10);
 			continue;
 		}
-		else if (srcPhone[i] >= '0' && srcPhone[i] <= '9')
-		{
+		else if (srcPhone[i] >= '0' && srcPhone[i] <= '9') {
 			destBuf[j++] = (char) srcPhone[i];
 			continue;
 		}
 		switch (srcPhone[i])
 		{
-			case 0xFF0B:
-			case '+':
-				destBuf[j++] = '+';
-				break;
-			case 0xFF0D:
-			case '-':
-				destBuf[j++] = '-';
-				break;
-			case 0xFF03:
-			case '#':
-				destBuf[j++] = '#';
-				break;
-			case 0xFF0A:
-			case '*':
-				destBuf[j++] = '*';
-				break;
-			case 0x20: //space
-			case 0x3000:
-				break;
-			default: //遇到不可解析的字符就当作分隔符了，进行返回
-				return i + 1;
+		case 0xFF0B:
+		case '+':
+			destBuf[j++] = '+';
+			break;
+		case 0xFF0D:
+		case '-':
+			destBuf[j++] = '-';
+			break;
+		case 0xFF03:
+		case '#':
+			destBuf[j++] = '#';
+			break;
+		case 0xFF0A:
+		case '*':
+			destBuf[j++] = '*';
+			break;
+		case 0x20: //space
+		case 0x3000:
+			break;
+		default: //遇到不可解析的字符就当作分隔符了，进行返回
+			return i + 1;
 		}
 	}
 	return len;
@@ -404,43 +372,40 @@ boolean checkPhone(const uchar* srcPhone, char* destBuf, size_t len)
 	if (destBuf == NULL || srcPhone == NULL || len == 0) return false;
 	size_t i = 0, j = 0;
 	boolean success = true;
-	for (i = 0, j = 0; i < len; i++)
-	{
+	for (i = 0, j = 0; i < len; i++) {
 		if (srcPhone[i] == 0x20 || srcPhone[i] == 0x3000) continue;
-		if (srcPhone[i] > 0xFF00 && (srcPhone[i] >= 0xFF10 && srcPhone[i] <= 0xFF19))
-		{
+		if (srcPhone[i] > 0xFF00 && (srcPhone[i] >= 0xFF10 && srcPhone[i] <= 0xFF19)) {
 			destBuf[j++] = '0' + (srcPhone[i] - 0xFF10);
 			continue;
 		}
-		else if (srcPhone[i] >= '0' && srcPhone[i] <= '9')
-		{
+		else if (srcPhone[i] >= '0' && srcPhone[i] <= '9') {
 			destBuf[j++] = (char) srcPhone[i];
 			continue;
 		}
 		switch (srcPhone[i])
 		{
-			case 0xFF0B:
-			case '+':
-				destBuf[j++] = '+';
-				break;
-			case 0xFF0D:
-			case '-':
-				destBuf[j++] = '-';
-				break;
-			case 0xFF03:
-			case '#':
-				destBuf[j++] = '#';
-				break;
-			case 0xFF0A:
-			case '*':
-				destBuf[j++] = '*';
-				break;
-			case 0x20: //space
-			case 0x3000:
-				break;
-			default:
-				success = false;
-				break;
+		case 0xFF0B:
+		case '+':
+			destBuf[j++] = '+';
+			break;
+		case 0xFF0D:
+		case '-':
+			destBuf[j++] = '-';
+			break;
+		case 0xFF03:
+		case '#':
+			destBuf[j++] = '#';
+			break;
+		case 0xFF0A:
+		case '*':
+			destBuf[j++] = '*';
+			break;
+		case 0x20: //space
+		case 0x3000:
+			break;
+		default:
+			success = false;
+			break;
 		}
 	}
 	return success;
@@ -472,8 +437,7 @@ void treeAddData(SearchTree* tree, const int primaryKey, const ulong64 filter, c
 	int i = 0, j = 0;
 //插入时按照字的首字母进行排序
 	pos = findStorageData2Insert(tree, data);
-	if (pos < 0)
-	{
+	if (pos < 0) {
 		//已存在
 		freeSearchData(data);
 		free(data);
@@ -481,15 +445,12 @@ void treeAddData(SearchTree* tree, const int primaryKey, const ulong64 filter, c
 	}
 	tree->searchDatas.insert(&(tree->searchDatas), (int) data, pos);
 
-	if (phoneNum)
-	{ //phoneNum存在
+	if (phoneNum) { //phoneNum存在
 		size = 0;
-		if (phoneLength > 0)
-		{
+		if (phoneLength > 0) {
 			buf = (char*) malloc(phoneLength + 1);
 			memset(buf, 0, phoneLength + 1);
-			do
-			{
+			do {
 				size = parserPhone(&phoneNum[i], buf, phoneLength - i);
 				i += size;
 				data->phoneCount++;
@@ -498,9 +459,8 @@ void treeAddData(SearchTree* tree, const int primaryKey, const ulong64 filter, c
 
 			i = 0;
 			j = 0;
-			phoneData = (SearchPhone*) malloc(SIZEOF_SEARCHPHONE* data->phoneCount);
-			do
-			{
+			phoneData = (SearchPhone*) malloc(SIZEOF_SEARCHPHONE * data->phoneCount);
+			do {
 				memset(buf, 0, phoneLength + 1);
 				size = parserPhone(&phoneNum[i], buf, phoneLength - i);
 				i += size;
@@ -527,8 +487,7 @@ void treeEndAdd(SearchTree* tree, int* outArray, int outLength)
 	int i = 0, j = 0;
 	int size = (tree->searchDatas).size;
 
-	for (i = 0; i < size; i++)
-	{
+	for (i = 0; i < size; i++) {
 		tree->searchDatas.get(&(tree->searchDatas), i, &data);
 		if (i < outLength) *(outArray++) = data->primaryKey;
 		data->primaryKey = i;
@@ -540,8 +499,7 @@ void treeEndAdd(SearchTree* tree, int* outArray, int outLength)
 void add2Cached(SearchData* data, ArrayList* cache)
 {
 	int pos = findCached2Insert(cache, data);
-	if (pos >= 0)
-	{
+	if (pos >= 0) {
 		cache->insert(cache, data->primaryKey, pos);
 	}
 }
@@ -554,36 +512,28 @@ void treeBuildIndex(SearchTree* tree)
 	int i = 0, primaryKey = 0, j = 0, k = 0, pos = 0, charIndex = 0;
 	int size = (tree->searchDatas).size;
 	int pyCodeNum = 0, pyIndex = 0;
-	for (i = 0; i < size; i++)
-	{
+	for (i = 0; i < size; i++) {
 		tree->searchDatas.get(&(tree->searchDatas), i, &data);
 		primaryKey = data->primaryKey;
-		for (k = 0; k < data->codesCount; k++)
-		{
+		for (k = 0; k < data->codesCount; k++) {
 			wordCodes = &(data->wordCodes[k]);
 			pyCodeNum = wordCodes->pyCodeNum & 0x07;
-			if (pyCodeNum > 0)
-			{
-				for (j = 0; j < pyCodeNum; j++)
-				{
+			if (pyCodeNum > 0) {
+				for (j = 0; j < pyCodeNum; j++) {
 					charIndex = PySpellCode[wordCodes->pyCodeIndex[j]][0] - 'a';
 					cache = &(tree->firstSpellIndex[charIndex]);
 					add2Cached(data, cache);
 				}
 			}
-			else
-			{
+			else {
 				// 不具有拼音码的字符
-				if (wordCodes->wordUnicode >= 'a' && wordCodes->wordUnicode <= 'z')
-				{
+				if (wordCodes->wordUnicode >= 'a' && wordCodes->wordUnicode <= 'z') {
 					charIndex = wordCodes->wordUnicode - 'a';
 				}
-				else if (wordCodes->wordUnicode >= '0' && wordCodes->wordUnicode <= '9')
-				{
+				else if (wordCodes->wordUnicode >= '0' && wordCodes->wordUnicode <= '9') {
 					charIndex = wordCodes->wordUnicode - '0' + LetterNum;
 				}
-				else
-				{
+				else {
 					charIndex = CachedHitSymbol;
 				}
 				cache = &(tree->firstSpellIndex[charIndex]);
@@ -601,16 +551,13 @@ char word2Digit(SearchTree* tree, const char src)
 	int len = 0;
 	int index = 0;
 	char word = src;
-	if (word >= 'A' && word <= 'Z')
-	{
+	if (word >= 'A' && word <= 'Z') {
 		word = word - CapsOff;
 	}
 
-	if (word >= 'a' && word <= 'z' && tree->matchFunc)
-	{
+	if (word >= 'a' && word <= 'z' && tree->matchFunc) {
 		index = word - 'a';
-		if (index >= 0)
-		{
+		if (index >= 0) {
 			word = tree->matchFunc[index];
 		}
 	}
@@ -620,13 +567,11 @@ char word2Digit(SearchTree* tree, const char src)
 boolean compareWord(SearchTree* tree, const char src, const char input, boolean isT9)
 {
 	char word = src;
-	if (input >= '0' && input <= '9' && isT9)
-	{
+	if (input >= '0' && input <= '9' && isT9) {
 		word = word2Digit(tree, word);
 	}
 
-	if (word == input)
-	{
+	if (word == input) {
 		return true;
 	}
 
@@ -640,25 +585,23 @@ int findCached2Insert(ArrayList* cache, SearchData* data)
 	int high = cache->size - 1;
 	int primaryKey = 0;
 	int mid = 0;
-	while (low <= high)
-	{
+	while (low <= high) {
 		mid = (low + high) >> 1;
 		cache->get(cache, mid, &primaryKey);
 
 		if (data->primaryKey > primaryKey) low = mid + 1;
 		else if (data->primaryKey < primaryKey) high = mid - 1;
-		else
-		{
+		else {
 			pos = mid;
 			goto Result;
 		}
 	}
 	pos = -(low + 1);
 
-	Result:
-	{
+	Result: {
 		if (pos < 0) return (-pos) - 1; // 找不到期待插入的位置,pos将等于-1,
-		else return -1;
+		else
+			return -1;
 	}
 }
 
@@ -676,25 +619,21 @@ boolean isMatch(SearchTree* tree, WordCode* wordCodes, const short codesCount, c
 	pyCodeNum = word->pyCodeNum & 0x07;
 // 如果input为非ASCII字符，则直接比对Unicode码是否一致
 
-	if (input & 0xFF00)
-	{
+	if (input & 0xFF00) {
 		return word->wordUnicode == input ? true : false;
 	}
 //pyCodeIndex 为0时 且word 为非拼音字符 检查字符本身是否匹配
-	if (pyCodeIndex == 0 && charIndex == 0 && pyCodeNum == 0)
-	{
+	if (pyCodeIndex == 0 && charIndex == 0 && pyCodeNum == 0) {
 		return compareWord(tree, (char) word->wordUnicode, (char) input, isT9);
 	}
 
-	if (pyCodeIndex >= pyCodeNum)
-	{
+	if (pyCodeIndex >= pyCodeNum) {
 		return false;
 	}
 
 	pyCode = PySpellCode[word->pyCodeIndex[pyCodeIndex]];
 
-	if (!pyCode[charIndex])
-	{
+	if (!pyCode[charIndex]) {
 		return false;
 	}
 
@@ -721,8 +660,7 @@ int findResult2Insert(SearchTree* tree, ArrayList* list, SearchResult* result)
 	WordCode* wtmpKey = NULL;
 	WordCode* wtmpMid = NULL;
 	SearchResult* midVal = 0;
-	while (low <= high)
-	{
+	while (low <= high) {
 		mid = (low + high) >> 1;
 		list->get(list, mid, &midVal);
 		ftmpKey = result->headMatchPos;
@@ -732,21 +670,17 @@ int findResult2Insert(SearchTree* tree, ArrayList* list, SearchResult* result)
 		tmpKey = ftmpKey->child;
 		tmpMid = ftmpMid->child;
 		//由于Key串决定了SearchPos的总长 所以无需校验 tmpKey|tmpMid 中有任一为NULL另一方不为NULL的情形
-		while (bc == 0)
-		{
-			if (tmpKey != NULL && tmpMid != NULL)
-			{
+		while (bc == 0) {
+			if (tmpKey != NULL && tmpMid != NULL) {
 				bc = (tmpKey->pos & 0xFFC0) - (tmpMid->pos & 0xFFC0); //逐一比较匹配位置 ,匹配的深度优先排前
 				tmpKey = tmpKey->child;
 				tmpMid = tmpMid->child;
 			}
-			else
-			{
+			else {
 				break;
 			}
 		}
-		if (bc == 0)
-		{
+		if (bc == 0) {
 			//被匹配到的wordCode位置一致
 			tree->searchDatas.get(&(tree->searchDatas), result->primaryKey, &dtmpKey);
 			tree->searchDatas.get(&(tree->searchDatas), midVal->primaryKey, &dtmpMid);
@@ -754,72 +688,57 @@ int findResult2Insert(SearchTree* tree, ArrayList* list, SearchResult* result)
 			wtmpMid = &(dtmpMid->wordCodes[ftmpMid->pos >> 6]);
 			wPyCodeNumKey = wtmpKey->pyCodeNum;
 			wPyCodeNumMid = wtmpMid->pyCodeNum;
-			if ((wPyCodeNumKey & 0x07) > 0 && (wPyCodeNumMid & 0x07) > 0)
-			{
-				bc = PySpellCode[wtmpMid->pyCodeIndex[(ftmpMid->pos >> 3) & 0x07]][ftmpMid->pos & 0x07]
-						- PySpellCode[wtmpKey->pyCodeIndex[(ftmpKey->pos >> 3) & 0x07]][ftmpKey->pos & 0x07];
+			if ((wPyCodeNumKey & 0x07) > 0 && (wPyCodeNumMid & 0x07) > 0) {
+				bc = PySpellCode[wtmpMid->pyCodeIndex[(ftmpMid->pos >> 3) & 0x07]][ftmpMid->pos & 0x07] - PySpellCode[wtmpKey->pyCodeIndex[(ftmpKey->pos >> 3) & 0x07]][ftmpKey->pos & 0x07];
 			}
-			else if ((wPyCodeNumKey & 0x07) == 0 && (wPyCodeNumMid & 0x07) == 0)
-			{
+			else if ((wPyCodeNumKey & 0x07) == 0 && (wPyCodeNumMid & 0x07) == 0) {
 				bc = wtmpMid->wordUnicode - wtmpKey->wordUnicode;
 			}
-			else if ((wPyCodeNumKey & 0x07) != 0 && (wPyCodeNumMid & 0x07) == 0)
-			{
+			else if ((wPyCodeNumKey & 0x07) != 0 && (wPyCodeNumMid & 0x07) == 0) {
 				bc = wtmpMid->wordUnicode - PySpellCode[wtmpKey->pyCodeIndex[(ftmpKey->pos >> 3) & 0x07]][ftmpKey->pos & 0x07];
 			}
-			else if ((wPyCodeNumKey & 0x07) == 0 && (wPyCodeNumMid & 0x07) != 0)
-			{
+			else if ((wPyCodeNumKey & 0x07) == 0 && (wPyCodeNumMid & 0x07) != 0) {
 				bc = PySpellCode[wtmpMid->pyCodeIndex[(ftmpMid->pos >> 3) & 0x07]][ftmpMid->pos & 0x07] - wtmpKey->wordUnicode;
 			}
 
-			if (bc == 0)
-			{
+			if (bc == 0) {
 				tmpKey = ftmpKey->child;
 				tmpMid = ftmpMid->child;
-				while (bc == 0)
-				{
-					if (tmpKey != NULL && tmpMid != NULL)
-					{
+				while (bc == 0) {
+					if (tmpKey != NULL && tmpMid != NULL) {
 						wtmpKey = &(dtmpKey->wordCodes[tmpKey->pos >> 6]);
 						wtmpMid = &(dtmpMid->wordCodes[tmpMid->pos >> 6]);
 						wPyCodeNumKey = wtmpKey->pyCodeNum;
 						wPyCodeNumMid = wtmpMid->pyCodeNum;
-						if ((wPyCodeNumKey & 0x07) > 0 && (wPyCodeNumMid & 0x07) > 0)
-						{
+						if ((wPyCodeNumKey & 0x07) > 0 && (wPyCodeNumMid & 0x07) > 0) {
 							bc = -wtmpKey->pyCodeIndex[(tmpKey->pos >> 3) & 0x07] + wtmpMid->pyCodeIndex[(tmpMid->pos >> 3) & 0x07];
 						}
-						else if ((wPyCodeNumKey & 0x07) == 0 && (wPyCodeNumMid & 0x07) == 0)
-						{
+						else if ((wPyCodeNumKey & 0x07) == 0 && (wPyCodeNumMid & 0x07) == 0) {
 							bc = -wtmpKey->wordUnicode + wtmpMid->wordUnicode;
 						}
-						else if ((wPyCodeNumKey & 0x07) != 0 && (wPyCodeNumMid & 0x07) == 0)
-						{
+						else if ((wPyCodeNumKey & 0x07) != 0 && (wPyCodeNumMid & 0x07) == 0) {
 							bc = -PySpellCode[wtmpKey->pyCodeIndex[(tmpKey->pos >> 3) & 0x07]][tmpKey->pos & 0x07] + wtmpMid->wordUnicode;
 						}
-						else if ((wPyCodeNumKey & 0x07) == 0 && (wPyCodeNumMid & 0x07) != 0)
-						{
+						else if ((wPyCodeNumKey & 0x07) == 0 && (wPyCodeNumMid & 0x07) != 0) {
 							bc = -wtmpKey->wordUnicode + PySpellCode[wtmpMid->pyCodeIndex[(tmpMid->pos >> 3) & 0x07]][tmpMid->pos & 0x07];
 						}
 						tmpKey = tmpKey->child;
 						tmpMid = tmpMid->child;
 					}
-					else
-					{
+					else {
 						break;
 					}
 				}
 			}
 		}
-		if (bc == 0)
-		{
+		if (bc == 0) {
 			bc = midVal->primaryKey - result->primaryKey;
 		}
 		if (bc < 0) //mid < key
 		low = mid + 1;
 		else if (bc > 0) //mid > key
 		high = mid - 1;
-		else
-		{
+		else {
 			pos = mid; // key found
 			goto Result;
 		}
@@ -827,14 +746,11 @@ int findResult2Insert(SearchTree* tree, ArrayList* list, SearchResult* result)
 	}
 	pos = -(low + 1); // key not found.
 
-	Result:
-	{
-		if (pos < 0)
-		{
+	Result: {
+		if (pos < 0) {
 			return (-pos) - 1; // 找不到期待插入的位置,pos将等于-1,
 		}
-		else
-		{
+		else {
 			return -1;
 		}
 	}
@@ -868,8 +784,7 @@ int isHit(SearchTree* tree, SearchData* data, WordCode* searchWord, const short 
 	SearchPos* matchPos = NULL;
 
 	/*----------------------------------------------------------------------------*/
-	if (searchCount == 0)
-	{
+	if (searchCount == 0) {
 		return false;
 	}
 
@@ -881,15 +796,12 @@ int isHit(SearchTree* tree, SearchData* data, WordCode* searchWord, const short 
 	 * FIFO
 	 */
 	charIndex = 0; //首字母位置
-	for (wordIndex = 0; wordIndex < srcLen; wordIndex++)
-	{
+	for (wordIndex = 0; wordIndex < srcLen; wordIndex++) {
 		codeT = srcCodes[wordIndex];
 		pyCodeNum = codeT.pyCodeNum & 0x07;
 		wordPyCount = pyCodeNum > 0 ? pyCodeNum : 1;
-		for (pyIndex = 0; pyIndex < wordPyCount; pyIndex++)
-		{
-			if (isMatch(tree, srcCodes, srcLen, wordIndex, pyIndex, charIndex, code.wordUnicode, isT9))
-			{
+		for (pyIndex = 0; pyIndex < wordPyCount; pyIndex++) {
+			if (isMatch(tree, srcCodes, srcLen, wordIndex, pyIndex, charIndex, code.wordUnicode, isT9)) {
 				pos = (SearchPos*) addPosCache((wordIndex << 6) | (pyIndex << 3) | charIndex, NULL, 1);
 				posQueue->append(posQueue, (int) pos);
 			}
@@ -898,16 +810,13 @@ int isHit(SearchTree* tree, SearchData* data, WordCode* searchWord, const short 
 
 	/*----------------------------------------------------------------------------*/
 // 对于后续的字符，从当前搜索位置开始继续查找可能的匹配项
-	while (true)
-	{
-		if (posQueue->size == 0)
-		{
+	while (true) {
+		if (posQueue->size == 0) {
 			//没有找到任何匹配项
 			break;
 		}
 		posQueue->removeAt(posQueue, 0, &pos);
-		if (pos->step == searchCount)
-		{
+		if (pos->step == searchCount) {
 			//搜索步长已经抵达 Key串的总长
 			matchPos = pos;
 			break;
@@ -920,28 +829,23 @@ int isHit(SearchTree* tree, SearchData* data, WordCode* searchWord, const short 
 		//下一个字
 		wordIndex = pWordIndex + 1;
 		charIndex = 0; //首字母位置
-		if (wordIndex < srcLen)
-		{ //本data中需要判断的字的位置 未抵达末尾
+		if (wordIndex < srcLen) { //本data中需要判断的字的位置 未抵达末尾
 			codeT = srcCodes[wordIndex];
 			pyCodeNum = codeT.pyCodeNum & 0x07;
 			wordPyCount = pyCodeNum > 0 ? pyCodeNum : 1;
-			for (pyIndex = 0; pyIndex < wordPyCount; pyIndex++)
-			{
-				if (isMatch(tree, srcCodes, srcLen, wordIndex, pyIndex, charIndex, code.wordUnicode, isT9))
-				{
+			for (pyIndex = 0; pyIndex < wordPyCount; pyIndex++) {
+				if (isMatch(tree, srcCodes, srcLen, wordIndex, pyIndex, charIndex, code.wordUnicode, isT9)) {
 					nextPos = (SearchPos*) addPosCache((wordIndex << 6) | (pyIndex << 3) | charIndex, pos, pos->step + 1);
 					posQueue->append(posQueue, (int) nextPos);
 				}
 			}
 		}
 		//当前字的拼音字符的下一个
-		if ((code.pyCodeNum & 0x07) == 0)
-		{
+		if ((code.pyCodeNum & 0x07) == 0) {
 			wordIndex = pWordIndex;
 			pyIndex = pPyIndex;
 			charIndex = pCharIndex + 1;
-			if (isMatch(tree, srcCodes, srcLen, wordIndex, pyIndex, charIndex, code.wordUnicode, isT9))
-			{
+			if (isMatch(tree, srcCodes, srcLen, wordIndex, pyIndex, charIndex, code.wordUnicode, isT9)) {
 				nextPos = (SearchPos*) addPosCache((wordIndex << 6) | (pyIndex << 3) | charIndex, pos, pos->step + 1);
 				posQueue->append(posQueue, (int) nextPos);
 			}
@@ -954,8 +858,7 @@ int isHit(SearchTree* tree, SearchData* data, WordCode* searchWord, const short 
 void add2Result(SearchTree* tree, SearchResult *result, ArrayList* cache)
 {
 	int pos = findResult2Insert(tree, cache, result);
-	if (pos >= 0)
-	{
+	if (pos >= 0) {
 		cache->insert(cache, (int) result, pos);
 	}
 }
@@ -974,40 +877,32 @@ void add2PhoneResult(SearchTree* tree, SearchPhone* matchedPhone, ArrayList* cac
 	SearchPhone* midSearchPhone = NULL;
 	int midValue = 0;
 	int bc = 0;
-	while (low <= high)
-	{
+	while (low <= high) {
 		mid = (low + high) >> 1;
 		cache->get(cache, mid, &midSearchPhone);
 		midValue = midSearchPhone->phoneMatch;
 		primaryKey = matchedPhone->primaryKey;
 		//由于匹配是连续型字段,并且不会出现多个匹配不符合的情况
 		bc = midValue - matchedPhone->phoneMatch;
-		if (bc == 0)
-		{
+		if (bc == 0) {
 			bc = midSearchPhone->primaryKey - primaryKey;
 		}
-		if (bc < 0)
-		{
+		if (bc < 0) {
 			low = mid + 1;
 		}
-		else if (bc > 0)
-		{
+		else if (bc > 0) {
 			high = mid - 1;
 		}
-		else
-		{
+		else {
 			pos = mid;
 			goto Result;
 		}
 	}
 	pos = -(low + 1);
-	Result:
-	{
-		if (pos < 0)
-		{
+	Result: {
+		if (pos < 0) {
 			pos = (-pos) - 1;
-			if (pos >= 0)
-			{
+			if (pos >= 0) {
 				cache->insert(cache, (int) matchedPhone, pos);
 			}
 		}
@@ -1030,8 +925,7 @@ boolean isMatchByKmp(const char* srcText, const char* keyText, int* phoneMatchPo
 	memset(&iKmpBuf, 0, 32);
 	j = 0;
 	len1 = cLength(keyText);
-	for (i = 1; i < len1; i++)
-	{
+	for (i = 1; i < len1; i++) {
 		while (keyText[j] != keyText[i] && j > 0)
 			j = iKmpBuf[j - 1];
 		if (keyText[j] == keyText[i]) j++;
@@ -1040,26 +934,20 @@ boolean isMatchByKmp(const char* srcText, const char* keyText, int* phoneMatchPo
 
 	j = 0;
 	len2 = cLength(srcText);
-	for (i = 0; i < len2; i++)
-	{
-		while (keyText[j] != srcText[i] && j > 0)
-		{
+	for (i = 0; i < len2; i++) {
+		while (keyText[j] != srcText[i] && j > 0) {
 			j = iKmpBuf[j - 1];
 		}
 
-		if (keyText[j] == srcText[i])
-		{
+		if (keyText[j] == srcText[i]) {
 			j++;
 		}
-		if (j >= len1)
-		{
-			if (phoneMatchPos)
-			{
+		if (j >= len1) {
+			if (phoneMatchPos) {
 				p1 = i - j + 1;
 				p2 = p1 + j;
 				*phoneMatchPos = 0;
-				for (k = p1; k < p2; k++)
-				{
+				for (k = p1; k < p2; k++) {
 					*phoneMatchPos = *phoneMatchPos | (1 << k);
 				}
 			}
@@ -1083,37 +971,30 @@ void searchCachedHit(SearchTree* tree, WordCode *word, ArrayList **desCacheList,
 	int pos = 0;
 	SearchData* data = NULL;
 
-	if ((word->wordUnicode & 0xFF00) > 0)
-	{ //编码集为Unicode部分
-		if (pyCodeNum > 0)
-		{
+	if ((word->wordUnicode & 0xFF00) > 0) { //编码集为Unicode部分
+		if (pyCodeNum > 0) {
 			// 有拼音码的汉字,只取首拼音项
 			charIndex = PySpellCode[word->pyCodeIndex[0]][0] - 'a'; // 获取字符拼音码的首字母
 			*desCacheList = &tree->firstSpellIndex[charIndex];
 		}
-		else
-		{
+		else {
 			//无拼音编码的汉字在treeBuildIndex方法中已被归入特殊字符
 			//输入为特殊字符
 			*desCacheList = &tree->firstSpellIndex[CachedHitSymbol];
 		}
 	}
-	else
-	{
+	else {
 // 无拼音码
 		charIndex = 0;
 
-		if (word->wordUnicode >= 'a' && word->wordUnicode <= 'z')
-		{
+		if (word->wordUnicode >= 'a' && word->wordUnicode <= 'z') {
 			// ASCII字母
 			charIndex = word->wordUnicode - 'a'; // 获取字符拼音码的首字母
 		}
-		else if (word->wordUnicode >= '0' && word->wordUnicode <= '9')
-		{
+		else if (word->wordUnicode >= '0' && word->wordUnicode <= '9') {
 			charIndex = word->wordUnicode - '0' + LetterNum;
 		}
-		else
-		{
+		else {
 			//Ascii 中的非字母、数字
 			charIndex = CachedHitSymbol; // 获取字符拼音码的首字母
 		}
@@ -1121,46 +1002,38 @@ void searchCachedHit(SearchTree* tree, WordCode *word, ArrayList **desCacheList,
 		cache = &tree->firstSpellIndex[charIndex];
 
 //数字键盘 与字母对应
-		if (word->wordUnicode >= '0' && word->wordUnicode <= '9' && tree->matchFunc)
-		{
+		if (word->wordUnicode >= '0' && word->wordUnicode <= '9' && tree->matchFunc) {
 			len = cLength(tree->matchFunc);
-			if (len <= 0)
-			{
+			if (len <= 0) {
 				*desCacheList = cache;
 				return;
 			}
 			*desCacheList = (ArrayList*) malloc(SIZEOF_ARRAYLIST);
 			*needFreeCache = true;
 			initArrayCapacity(*desCacheList, cache->maxCapacity << 1);
-			for (i = 0; i < cache->size; i++)
-			{
+			for (i = 0; i < cache->size; i++) {
 				cache->get(cache, i, &value);
 				(*desCacheList)->append(*desCacheList, value);
 			}
 
-			for (i = 0; i < len; i++)
-			{
-				if (tree->matchFunc[i] != word->wordUnicode)
-				{
+			for (i = 0; i < len; i++) {
+				if (tree->matchFunc[i] != word->wordUnicode) {
 					continue;
 				}
 
 				cache = &tree->firstSpellIndex[i];
-				for (j = 0; j < cache->size; j++)
-				{
+				for (j = 0; j < cache->size; j++) {
 					cache->get(cache, j, &primaryKey);
 					tree->searchDatas.get(&tree->searchDatas, primaryKey, &data);
 					pos = findCached2Insert(*desCacheList, data);
-					if (pos >= 0)
-					{
+					if (pos >= 0) {
 						//不存在
 						(*desCacheList)->insert(*desCacheList, primaryKey, pos);
 					}
 				}
 			}
 		}
-		else
-		{
+		else {
 			*desCacheList = cache;
 		}
 	}
@@ -1170,19 +1043,16 @@ int intsCmp(int* src, int srcLen, int* target, int tarLen)
 {
 	int length = srcLen > tarLen ? tarLen : srcLen;
 	int i = 0, v = 0;
-	for (i = 0; i < length; i++)
-	{
+	for (i = 0; i < length; i++) {
 		v = src[i] < target[i] ? -1 : src[i] > target[i] ? 1 : 0;
-		if (v != 0)
-		{
+		if (v != 0) {
 			return v;
 		}
 	}
 	return srcLen < tarLen ? -1 : srcLen > tarLen ? 1 : 0;
 }
 
-void treeSearch(SearchTree* tree, const uchar* keyText, const int keyLength, LinkedList* lastSearched, ArrayList* desNameMatchHits, ArrayList* desPhoneMatchHits, int resultLimit,
-		ulong64 filter, boolean isT9)
+void treeSearch(SearchTree* tree, const uchar* keyText, const int keyLength, LinkedList* lastSearched, ArrayList* desNameMatchHits, ArrayList* desPhoneMatchHits, int resultLimit, ulong64 filter, boolean isT9)
 {
 	SearchData* keySearchData = tree->keySearchData;
 	SearchData *dataToMatch = NULL;
@@ -1206,8 +1076,7 @@ void treeSearch(SearchTree* tree, const uchar* keyText, const int keyLength, Lin
 	 * 构建搜索串的SearchData
 	 */
 	if (keySearchData != NULL) freeSearchData(keySearchData);
-	else
-	{
+	else {
 		keySearchData = (SearchData*) malloc(SIZEOF_SEARCHDATA);
 		keySearchData->wordCodes = NULL;
 		keySearchData->sortKeys = NULL;
@@ -1215,8 +1084,7 @@ void treeSearch(SearchTree* tree, const uchar* keyText, const int keyLength, Lin
 		tree->keySearchData = keySearchData;
 	}
 
-	if (keyText)
-	{
+	if (keyText) {
 		text2SearchData(keyText, keyLength, keySearchData);
 
 		keyLen = keySearchData->codesCount;
@@ -1228,20 +1096,17 @@ void treeSearch(SearchTree* tree, const uchar* keyText, const int keyLength, Lin
 
 	/*----------------------------------------------------------------------------*/
 	//获取缓存搜索集
-	if (lastSearched == NULL)
-	{
+	if (lastSearched == NULL) {
 		cachedHits = (ArrayList**) malloc(sizeof(ArrayList*));
 		searchCachedHit(tree, &keySearchData->wordCodes[0], cachedHits, &needFreeCache);
 		cache = *cachedHits;
 		free(cachedHits);
 	}
-	else
-	{
+	else {
 		cache = (ArrayList*) malloc(SIZEOF_ARRAYLIST);
 		needFreeCache = true;
 		initArrayCapacity(cache, 256);
-		for (i = 0; i < lastSearched->size; i++)
-		{
+		for (i = 0; i < lastSearched->size; i++) {
 			lastSearched->get(lastSearched, i, &value);
 			cache->append(cache, value);
 		}
@@ -1249,34 +1114,28 @@ void treeSearch(SearchTree* tree, const uchar* keyText, const int keyLength, Lin
 	}
 
 	/*----------------------------------------------------------------------------*/
-	if (keySearchData->codesCount >= 1)
-	{
-		for (i = 0; i < cache->size; i++)
-		{
+	if (keySearchData->codesCount >= 1) {
+		for (i = 0; i < cache->size; i++) {
 			cache->get(cache, i, &primaryKey);
 			tree->searchDatas.get(&tree->searchDatas, primaryKey, &dataToMatch);
 			if (filter != 0 && (dataToMatch->filter & filter) == 0 && dataToMatch->filter != 0) continue;
 			matchPos = (SearchPos*) isHit(tree, dataToMatch, keySearchData->wordCodes, keySearchData->codesCount, isT9);
-			if (matchPos != NULL)
-			{
-				do
-				{
+			if (matchPos != NULL) {
+				do {
 					mFatherPos = matchPos->father;
-					if (mFatherPos != NULL)
-					{
+					if (mFatherPos != NULL) {
 						mFatherPos->child = matchPos;
 						matchPos = mFatherPos;
 					}
 				}
-				while (mFatherPos != NULL );
+				while (mFatherPos != NULL);
 				sResult = (SearchResult*) addResultCache(matchPos, primaryKey);
 				add2Result(tree, sResult, desNameMatchHits);
 				dataToMatch->isMatched = true;
 			}
 		}
 
-		for (i = 0; i < desNameMatchHits->size; i++)
-		{
+		for (i = 0; i < desNameMatchHits->size; i++) {
 			desNameMatchHits->get(desNameMatchHits, i, &sResult);
 			primaryKey = sResult->primaryKey;
 			desNameMatchHits->set(desNameMatchHits, primaryKey, i);
@@ -1285,10 +1144,8 @@ void treeSearch(SearchTree* tree, const uchar* keyText, const int keyLength, Lin
 		clearPosCache();
 		clearResultCache();
 	}
-	else
-	{ //取缓冲里的值作为匹配项进行结果输出.
-		for (i = 0; i < cache->size; i++)
-		{
+	else { //取缓冲里的值作为匹配项进行结果输出.
+		for (i = 0; i < cache->size; i++) {
 			cache->get(cache, i, &value);
 			desNameMatchHits->append(desNameMatchHits, value);
 		}
@@ -1296,35 +1153,29 @@ void treeSearch(SearchTree* tree, const uchar* keyText, const int keyLength, Lin
 
 	/*----------------------------------------------------------------------------*/
 
-	if (needFreeCache)
-	{
+	if (needFreeCache) {
 		cache->dispose(cache);
 		free(cache);
 	}
 	cache = NULL;
 	cachedHits = NULL;
 	/*----------------------------------------------------------------------------*/
-	if (desPhoneMatchHits && allDigit && keyLength > 0)
-	{
+	if (desPhoneMatchHits && allDigit && keyLength > 0) {
 		//搜索号码匹配
 
-		if (pCache->size > 0)
-		{
-			for (pCache->iterator(pCache); pCache->hasNext(pCache);)
-			{
+		if (pCache->size > 0) {
+			for (pCache->iterator(pCache); pCache->hasNext(pCache);) {
 				phoneToMatch = (SearchPhone*) pCache->next(pCache);
 				tree->searchDatas.get(&(tree->searchDatas), phoneToMatch->primaryKey, &phoneData);
 				if (cLength(phoneToMatch->phoneNum) < keyLen || phoneData->isMatched || (filter != 0 && (phoneData->filter & filter) == 0 && phoneData->filter != 0)) continue;
 				//号码匹配
-				if (isMatchByKmp(phoneToMatch->phoneNum, phoneNum, &phoneToMatch->phoneMatch))
-				{
+				if (isMatchByKmp(phoneToMatch->phoneNum, phoneNum, &phoneToMatch->phoneMatch)) {
 					add2PhoneResult(tree, phoneToMatch, desPhoneMatchHits);
 				}
 			}
 		}
 	}
-	for (i = 0; i < desNameMatchHits->size; i++)
-	{
+	for (i = 0; i < desNameMatchHits->size; i++) {
 		desNameMatchHits->get(desNameMatchHits, i, &primaryKey);
 		tree->searchDatas.get(&tree->searchDatas, primaryKey, &dataToMatch);
 		dataToMatch->isMatched = false;
@@ -1336,8 +1187,7 @@ void treeSearch(SearchTree* tree, const uchar* keyText, const int keyLength, Lin
  * @param keyText 搜索Key应少于18个字符.
  * @return boolean 是否有搜索到新的结果集.否将不进行结果集的传递与更新
  */
-void getPhoneHighLights(SearchTree* tree, const int* lastSearched, const int count, const uchar* keyText, const int keyLength, const char* dyeStr, const int dyeStrLen,
-		uchar ** result)
+void getPhoneHighLights(SearchTree* tree, const int* lastSearched, const int count, const uchar* keyText, const int keyLength, const char* dyeStr, const int dyeStrLen, uchar ** result)
 {
 	SearchData* dataToSearch = NULL;
 	SearchPhone* phoneToSearch = NULL;
@@ -1353,34 +1203,27 @@ void getPhoneHighLights(SearchTree* tree, const int* lastSearched, const int cou
 	/*----------------------------------------------------------------------------*/
 	phoneNum = (char*) malloc(keyLength + 1);
 	memset(phoneNum, 0, keyLength + 1);
-	if (!checkPhone(keyText, phoneNum, keyLength))
-	{
+	if (!checkPhone(keyText, phoneNum, keyLength)) {
 		free(phoneNum);
 		return;
 	}
 	initLinked(&charsCache);
 
-	for (i = 0; i < count; i++)
-	{
+	for (i = 0; i < count; i++) {
 		primaryKey = lastSearched[i] >> 8;
 		tree->searchDatas.get(&tree->searchDatas, primaryKey, &dataToSearch);
 		t = lastSearched[i] & 0xFF;
 		if (t == 0xFF) continue;
 		phoneToSearch = &(dataToSearch->phones[t]);
-		if (isMatchByKmp(phoneToSearch->phoneNum, phoneNum, &phoneToSearch->phoneMatch))
-		{
-			for (k = 0, m = -1, n = -1, t = cLength(phoneToSearch->phoneNum); k < 32; k++)
-			{
-				if ((phoneToSearch->phoneMatch & (1 << k)) > 0 && m < 0)
-				{ //  首次匹配到关键字 加入着色段 标记m
+		if (isMatchByKmp(phoneToSearch->phoneNum, phoneNum, &phoneToSearch->phoneMatch)) {
+			for (k = 0, m = -1, n = -1, t = cLength(phoneToSearch->phoneNum); k < 32; k++) {
+				if ((phoneToSearch->phoneMatch & (1 << k)) > 0 && m < 0) { //  首次匹配到关键字 加入着色段 标记m
 					m = k;
-					for (j = 0; j < dyeStrLen; j++)
-					{
+					for (j = 0; j < dyeStrLen; j++) {
 						charsCache.append(&charsCache, dyeStr[j]);
 					}
 				}
-				else if ((phoneToSearch->phoneMatch & (1 << k)) == 0 && n < 0 && m >= 0)
-				{ // 在匹配到关键字之后第一次发现非匹配字,插入</font>结束符
+				else if ((phoneToSearch->phoneMatch & (1 << k)) == 0 && n < 0 && m >= 0) { // 在匹配到关键字之后第一次发现非匹配字,插入</font>结束符
 					charsCache.append(&charsCache, '<');
 					charsCache.append(&charsCache, '/');
 					charsCache.append(&charsCache, 'f');
@@ -1396,8 +1239,7 @@ void getPhoneHighLights(SearchTree* tree, const int* lastSearched, const int cou
 
 		result[i] = (uchar*) malloc((charsCache.size + 1) * sizeof(char));
 		node = charsCache.first;
-		for (j = 0; j < charsCache.size; j++)
-		{
+		for (j = 0; j < charsCache.size; j++) {
 			result[i][j] = (char) node->pData;
 			node = node->next;
 		}
@@ -1421,8 +1263,7 @@ void concatStr(LinkedList* charsCache, char* str)
 /*
  *	@param dyeStr <font color=#D64206>
  */
-void getHighLights(SearchTree* tree, const int* lastSearched, const int count, const uchar* keyText, const int keyLength, const char* dyeStr, const int dyeStrLen, uchar ** result,
-		boolean isT9)
+void getHighLights(SearchTree* tree, const int* lastSearched, const int count, const uchar* keyText, const int keyLength, const char* dyeStr, const int dyeStrLen, uchar ** result, boolean isT9)
 {
 	SearchData* keySearchData = tree->keySearchData;
 	SearchData* dataToSearch = NULL;
@@ -1451,8 +1292,7 @@ void getHighLights(SearchTree* tree, const int* lastSearched, const int count, c
 	/*----------------------------------------------------------------------------*/
 	if (keyText == NULL) return;
 	if (keySearchData != NULL) freeSearchData(keySearchData);
-	else
-	{
+	else {
 		keySearchData = (SearchData*) malloc(SIZEOF_SEARCHDATA);
 		keySearchData->wordCodes = NULL;
 		keySearchData->sortKeys = NULL;
@@ -1470,43 +1310,33 @@ void getHighLights(SearchTree* tree, const int* lastSearched, const int count, c
 	memset(phoneNum, 0, length + 1);
 	allDigit = checkPhone(keyText, phoneNum, length);
 
-	for (i = 0; i < count; i++)
-	{
+	for (i = 0; i < count; i++) {
 		primaryKey = lastSearched[i] >> 8;
 		tree->searchDatas.get(&tree->searchDatas, primaryKey, &dataToSearch);
 		matchPos = (SearchPos*) isHit(tree, dataToSearch, keySearchData->wordCodes, keySearchData->codesCount, isT9);
-		if (matchPos != NULL)
-		{
-			do
-			{ //获取到匹配项构建路径序列
+		if (matchPos != NULL) {
+			do { //获取到匹配项构建路径序列
 				mFatherPos = matchPos->father;
-				if (mFatherPos != NULL)
-				{
+				if (mFatherPos != NULL) {
 					mFatherPos->child = matchPos;
 					matchPos = mFatherPos;
 				}
 			}
-			while (mFatherPos != NULL ); //matchPos已指向最开始匹配的SearchPos
+			while (mFatherPos != NULL); //matchPos已指向最开始匹配的SearchPos
 		}
-		else
-		{ //此项匹配应为号码匹配项
+		else { //此项匹配应为号码匹配项
 			t = lastSearched[i] & 0xFF;
 			if (t == 0xFF) continue; // 编号-1 名字也没匹配，此项数据已错误，跳过
 			phoneToSearch = &dataToSearch->phones[t];
-			if (isMatchByKmp(phoneToSearch->phoneNum, phoneNum, &phoneToSearch->phoneMatch))
-			{ //寻找
-				for (k = 0, m = -1, n = -1, t = cLength(phoneToSearch->phoneNum); k < 32; k++)
-				{
-					if ((phoneToSearch->phoneMatch & (1 << k)) > 0 && m < 0)
-					{ //  首次匹配到关键字 加入着色段 标记m
+			if (isMatchByKmp(phoneToSearch->phoneNum, phoneNum, &phoneToSearch->phoneMatch)) { //寻找
+				for (k = 0, m = -1, n = -1, t = cLength(phoneToSearch->phoneNum); k < 32; k++) {
+					if ((phoneToSearch->phoneMatch & (1 << k)) > 0 && m < 0) { //  首次匹配到关键字 加入着色段 标记m
 						m = k;
-						for (j = 0; j < dyeStrLen; j++)
-						{
+						for (j = 0; j < dyeStrLen; j++) {
 							phoneCache.append(&phoneCache, dyeStr[j]);
 						}
 					}
-					else if ((phoneToSearch->phoneMatch & (1 << k)) == 0 && n < 0 && m >= 0)
-					{ // 在匹配到关键字之后第一次发现非匹配字,插入</font>结束符
+					else if ((phoneToSearch->phoneMatch & (1 << k)) == 0 && n < 0 && m >= 0) { // 在匹配到关键字之后第一次发现非匹配字,插入</font>结束符
 						phoneCache.append(&phoneCache, '<');
 						phoneCache.append(&phoneCache, '/');
 						phoneCache.append(&phoneCache, 'f');
@@ -1521,58 +1351,46 @@ void getHighLights(SearchTree* tree, const int* lastSearched, const int count, c
 				goto DyePhone;
 			}
 		}
-		for (j = 0, k = 0, pyIndex = 0; j < dataToSearch->codesCount; j++, k++)
-		{
+		for (j = 0, k = 0, pyIndex = 0; j < dataToSearch->codesCount; j++, k++) {
 			wordCode = &(dataToSearch->wordCodes[j]);
 			wordIndex = wordCode->pyCodeNum >> 3;
-			while (k < wordIndex)
-			{ //当前字位置如果超越K的位置需要向charCache中填充空格 ->0x20
+			while (k < wordIndex) { //当前字位置如果超越K的位置需要向charCache中填充空格 ->0x20
 				charsCache.append(&charsCache, 0x20);
 				pyCache.append(&pyCache, 0x20);
 				k++;
 			}
 
-			if (matchPos != NULL)
-			{
+			if (matchPos != NULL) {
 				wordPos = matchPos->pos >> 6; // matchPos匹配到的字位置,是SearchData 中的第wordPos字
 				pyIndex = (matchPos->pos >> 3) & 0x07;
 				charIndex = matchPos->pos & 0x07;
 
-				if (wordPos == j)
-				{ //本字被匹配
-					if (!dyeOpen)
-					{
+				if (wordPos == j) { //本字被匹配
+					if (!dyeOpen) {
 						dyeOpen = true;
-						for (n = 0; n < dyeStrLen; n++)
-						{
+						for (n = 0; n < dyeStrLen; n++) {
 							charsCache.append(&charsCache, dyeStr[n]);
 						}
 					}
 					charsCache.append(&charsCache, wordCode->srcUnicode);
 
-					if (!dyeOpenPy && !dataToSearch->isNameAllDigit)
-					{
+					if (!dyeOpenPy && !dataToSearch->isNameAllDigit) {
 						dyeOpenPy = true;
-						for (n = 0; n < dyeStrLen; n++)
-						{
+						for (n = 0; n < dyeStrLen; n++) {
 							pyCache.append(&pyCache, dyeStr[n]);
 						}
 					}
-					if ((wordCode->pyCodeNum & 0x07) > 0)
-					{ //存在拼音
+					if ((wordCode->pyCodeNum & 0x07) > 0) { //存在拼音
 
-						for (m = 0;; m++)
-						{
+						for (m = 0;; m++) {
 							pyChar = PySpellCode[wordCode->pyCodeIndex[pyIndex]][m];
 							nextPyChar = PySpellCode[wordCode->pyCodeIndex[pyIndex]][m + 1];
 							if (m == 0) pyChar = pyChar - CapsOff; //对首字母进行大写
-							if (m == charIndex)
-							{
+							if (m == charIndex) {
 								matchPos = matchPos->child; //此匹配过程已被染色过程消耗掉,消耗拼音过程
 								if (matchPos != NULL && (matchPos->pos >> 6) == wordPos) charIndex = matchPos->pos & 0x07; //由于同一次匹配过程中不可能出现相同字的不同多音字不被匹配的情形,所以此处不再继续讨论pyIndex是否相等
 							}
-							else if (dyeOpenPy)
-							{
+							else if (dyeOpenPy) {
 								pyCache.append(&pyCache, '<');
 								pyCache.append(&pyCache, '/');
 								pyCache.append(&pyCache, 'f');
@@ -1587,8 +1405,7 @@ void getHighLights(SearchTree* tree, const int* lastSearched, const int count, c
 						}
 
 					}
-					else
-					{
+					else {
 						//所有字符都是"数字" 将不计入pyCache
 						if (!dataToSearch->isNameAllDigit) pyCache.append(&pyCache, wordCode->srcUnicode); //非汉字直接将原文加入pyCache
 						matchPos = matchPos->child;
@@ -1596,14 +1413,12 @@ void getHighLights(SearchTree* tree, const int* lastSearched, const int count, c
 					continue;
 				}
 				else
-				//本字非匹配
-				goto NoMatch;
+					//本字非匹配
+					goto NoMatch;
 			}
 
-			NoMatch:
-			{
-				if (dyeOpen)
-				{ //当匹配到一个非匹配字时完成<font></font>标签关闭
+			NoMatch: {
+				if (dyeOpen) { //当匹配到一个非匹配字时完成<font></font>标签关闭
 					charsCache.append(&charsCache, '<');
 					charsCache.append(&charsCache, '/');
 					charsCache.append(&charsCache, 'f');
@@ -1614,8 +1429,7 @@ void getHighLights(SearchTree* tree, const int* lastSearched, const int count, c
 					dyeOpen = false;
 				}
 				charsCache.append(&charsCache, wordCode->srcUnicode);
-				if (dyeOpenPy)
-				{
+				if (dyeOpenPy) {
 					pyCache.append(&pyCache, '<');
 					pyCache.append(&pyCache, '/');
 					pyCache.append(&pyCache, 'f');
@@ -1625,10 +1439,8 @@ void getHighLights(SearchTree* tree, const int* lastSearched, const int count, c
 					pyCache.append(&pyCache, '>');
 					dyeOpenPy = false;
 				}
-				if ((wordCode->pyCodeNum & 0x07) > 0)
-				{ //存在拼音
-					for (m = 0;; m++)
-					{
+				if ((wordCode->pyCodeNum & 0x07) > 0) { //存在拼音
+					for (m = 0;; m++) {
 						pyChar = PySpellCode[wordCode->pyCodeIndex[0]][m];
 						nextPyChar = PySpellCode[wordCode->pyCodeIndex[0]][m + 1];
 						if (m == 0) pyChar = pyChar - CapsOff; //对首字母进行大写
@@ -1643,8 +1455,7 @@ void getHighLights(SearchTree* tree, const int* lastSearched, const int count, c
 				}
 			} //end NoMatch
 		}
-		if (dyeOpen)
-		{
+		if (dyeOpen) {
 			charsCache.append(&charsCache, '<');
 			charsCache.append(&charsCache, '/');
 			charsCache.append(&charsCache, 'f');
@@ -1654,8 +1465,7 @@ void getHighLights(SearchTree* tree, const int* lastSearched, const int count, c
 			charsCache.append(&charsCache, '>');
 			dyeOpen = false;
 		}
-		if (dyeOpenPy)
-		{
+		if (dyeOpenPy) {
 			pyCache.append(&pyCache, '<');
 			pyCache.append(&pyCache, '/');
 			pyCache.append(&pyCache, 'f');
@@ -1666,10 +1476,8 @@ void getHighLights(SearchTree* tree, const int* lastSearched, const int count, c
 			dyeOpenPy = false;
 		}
 		//染色结束
-		DyeName:
-		{
-			if (pyCache.size > 0)
-			{
+		DyeName: {
+			if (pyCache.size > 0) {
 				pyCache.insert(&pyCache, '>', 0);
 				pyCache.insert(&pyCache, 'l', 0);
 				pyCache.insert(&pyCache, 'l', 0);
@@ -1690,8 +1498,7 @@ void getHighLights(SearchTree* tree, const int* lastSearched, const int count, c
 				result[i] = (uchar*) malloc((charsCache.size + 1 + pyCache.size + 1) * sizeof(uchar));
 
 				node = charsCache.first;
-				for (j = 0; j < charsCache.size; j++)
-				{
+				for (j = 0; j < charsCache.size; j++) {
 					result[i][j] = (uchar) node->pData;
 					node = node->next;
 				}
@@ -1699,8 +1506,7 @@ void getHighLights(SearchTree* tree, const int* lastSearched, const int count, c
 				result[i][j++] = (uchar) 0x20;
 
 				node = pyCache.first;
-				for (p = 0; p < pyCache.size; p++, j++)
-				{
+				for (p = 0; p < pyCache.size; p++, j++) {
 					result[i][j] = (uchar) node->pData;
 					node = node->next;
 				}
@@ -1708,13 +1514,11 @@ void getHighLights(SearchTree* tree, const int* lastSearched, const int count, c
 				// + 1为空格
 				result[i][charsCache.size + pyCache.size + 1] = '\0';
 			}
-			else
-			{
+			else {
 				// +1 结尾
 				result[i] = (uchar*) malloc((charsCache.size + 1) * sizeof(uchar));
 				node = charsCache.first;
-				for (j = 0; j < charsCache.size; j++)
-				{
+				for (j = 0; j < charsCache.size; j++) {
 					result[i][j] = (uchar) node->pData;
 					node = node->next;
 				}
@@ -1724,12 +1528,10 @@ void getHighLights(SearchTree* tree, const int* lastSearched, const int count, c
 			pyCache.clear(&pyCache);
 			continue;
 		} //end DyName
-		DyePhone:
-		{
+		DyePhone: {
 			result[i] = (uchar*) malloc((phoneCache.size + 1) * sizeof(uchar));
 			node = phoneCache.first;
-			for (j = 0; j < phoneCache.size; j++)
-			{
+			for (j = 0; j < phoneCache.size; j++) {
 				result[i][j] = (uchar) node->pData;
 				node = node->next;
 			}
@@ -1746,8 +1548,7 @@ void getHighLights(SearchTree* tree, const int* lastSearched, const int count, c
 /*
  *	@param dyeStr <font color=#D64206>
  */
-void getNameHighLights(SearchTree* tree, const int* lastSearched, const int count, const uchar* keyText, const int keyLength, const char* dyeStr, const int dyeStrLen,
-		uchar ** result, boolean isT9)
+void getNameHighLights(SearchTree* tree, const int* lastSearched, const int count, const uchar* keyText, const int keyLength, const char* dyeStr, const int dyeStrLen, uchar ** result, boolean isT9)
 {
 	SearchData* keySearchData = tree->keySearchData;
 	SearchData* dataToSearch = NULL;
@@ -1764,17 +1565,14 @@ void getNameHighLights(SearchTree* tree, const int* lastSearched, const int coun
 	boolean dyeOpen = false;
 	LinkedList charsCache;
 	/*----------------------------------------------------------------------------*/
-	if (keyText == NULL)
-	{
+	if (keyText == NULL) {
 		return;
 	}
 
-	if (keySearchData != NULL)
-	{
+	if (keySearchData != NULL) {
 		freeSearchData(keySearchData);
 	}
-	else
-	{
+	else {
 		keySearchData = (SearchData*) malloc(SIZEOF_SEARCHDATA);
 		keySearchData->wordCodes = NULL;
 		keySearchData->sortKeys = NULL;
@@ -1784,54 +1582,43 @@ void getNameHighLights(SearchTree* tree, const int* lastSearched, const int coun
 
 	text2SearchData(keyText, keyLength, keySearchData);
 
-	for (i = 0; i < count; i++)
-	{
+	for (i = 0; i < count; i++) {
 		primaryKey = lastSearched[i] >> 8;
 		tree->searchDatas.get(&tree->searchDatas, primaryKey, &dataToSearch);
 		matchPos = (SearchPos*) isHit(tree, dataToSearch, keySearchData->wordCodes, keySearchData->codesCount, isT9);
 
 		if (matchPos == NULL) break;
-		do
-		{ //获取到匹配项,构建路径序列
+		do { //获取到匹配项,构建路径序列
 			mFatherPos = matchPos->father;
-			if (mFatherPos != NULL)
-			{
+			if (mFatherPos != NULL) {
 				mFatherPos->child = matchPos;
 				matchPos = mFatherPos;
 			}
 		}
-		while (mFatherPos != NULL );
+		while (mFatherPos != NULL);
 		//matchPos已指向最开始匹配的SearchPos 搜索路径构建完毕
-		for (j = 0, k = 0; j < dataToSearch->codesCount; j++, k++)
-		{
+		for (j = 0, k = 0; j < dataToSearch->codesCount; j++, k++) {
 			wordCode = &(dataToSearch->wordCodes[j]);
 			wordIndex = wordCode->pyCodeNum >> 3;
-			while (k < wordIndex)
-			{ //当前字位置如果超越K的位置需要向charCache中填充空格 ->0x20
+			while (k < wordIndex) { //当前字位置如果超越K的位置需要向charCache中填充空格 ->0x20
 				charsCache.append(&charsCache, 0x20);
 				k++;
 			}
-			if (matchPos != NULL && (wordPos = matchPos->pos >> 6) == j)
-			{ // matchPos匹配到的字位置,是SearchData 中的第wordPos字,与toSearch中的第J个位置进行了匹配
-				if (!dyeOpen)
-				{
+			if (matchPos != NULL && (wordPos = matchPos->pos >> 6) == j) { // matchPos匹配到的字位置,是SearchData 中的第wordPos字,与toSearch中的第J个位置进行了匹配
+				if (!dyeOpen) {
 					dyeOpen = true;
-					for (n = 0; n < dyeStrLen; n++)
-					{
+					for (n = 0; n < dyeStrLen; n++) {
 						charsCache.append(&charsCache, dyeStr[n]);
 					}
 				}
 				charsCache.append(&charsCache, wordCode->srcUnicode);
-				do
-				{
+				do {
 					matchPos = matchPos->child; //消耗掉当前的匹配过程  -> 检查下一个匹配路径是否依然是当前字. 直到消耗完毕为止
 				}
 				while (matchPos != NULL && (matchPos->pos >> 6) == j);
 			}
-			else
-			{ //由于匹配过程完全都是连续的,不存在跳字,所以一旦发现不在匹配即可封闭<font></font>标签
-				if (dyeOpen)
-				{
+			else { //由于匹配过程完全都是连续的,不存在跳字,所以一旦发现不在匹配即可封闭<font></font>标签
+				if (dyeOpen) {
 					charsCache.append(&charsCache, '<');
 					charsCache.append(&charsCache, '/');
 					charsCache.append(&charsCache, 'f');
@@ -1845,8 +1632,7 @@ void getNameHighLights(SearchTree* tree, const int* lastSearched, const int coun
 			}
 		}
 
-		if (dyeOpen)
-		{ //当匹配到最后一个字时完成<font></font>标签关闭
+		if (dyeOpen) { //当匹配到最后一个字时完成<font></font>标签关闭
 			charsCache.append(&charsCache, '<');
 			charsCache.append(&charsCache, '/');
 			charsCache.append(&charsCache, 'f');
@@ -1859,8 +1645,7 @@ void getNameHighLights(SearchTree* tree, const int* lastSearched, const int coun
 
 		result[i] = (uchar*) malloc((charsCache.size + 1) * sizeof(uchar));
 		node = charsCache.first;
-		for (j = 0; j < charsCache.size; j++)
-		{
+		for (j = 0; j < charsCache.size; j++) {
 			result[i][j] = (uchar) node->pData;
 			node = node->next;
 		}
@@ -1874,8 +1659,7 @@ void getNameHighLights(SearchTree* tree, const int* lastSearched, const int coun
 /*
  *	@param dyeStr <font color=#D64206>
  */
-void getPyHighLights(SearchTree* tree, const int* lastSearched, const int count, const uchar* keyText, const int keyLength, const char* dyeStr, const int dyeStrLen, uchar** result,
-		boolean isT9)
+void getPyHighLights(SearchTree* tree, const int* lastSearched, const int count, const uchar* keyText, const int keyLength, const char* dyeStr, const int dyeStrLen, uchar** result, boolean isT9)
 {
 	SearchData* keySearchData = tree->keySearchData;
 	SearchData* dataToSearch = NULL;
@@ -1895,16 +1679,13 @@ void getPyHighLights(SearchTree* tree, const int* lastSearched, const int count,
 	boolean dyeOpenPy = false;
 	LinkedList pyCache;
 	/*----------------------------------------------------------------------------*/
-	if (keyText == NULL)
-	{
+	if (keyText == NULL) {
 		return;
 	}
-	if (keySearchData != NULL)
-	{
+	if (keySearchData != NULL) {
 		freeSearchData(keySearchData);
 	}
-	else
-	{
+	else {
 		keySearchData = (SearchData*) malloc(SIZEOF_SEARCHDATA);
 		keySearchData->wordCodes = NULL;
 		keySearchData->sortKeys = NULL;
@@ -1913,65 +1694,52 @@ void getPyHighLights(SearchTree* tree, const int* lastSearched, const int count,
 	initLinked(&pyCache);
 	text2SearchData(keyText, keyLength, keySearchData);
 
-	for (i = 0; i < count; i++)
-	{
+	for (i = 0; i < count; i++) {
 		primaryKey = lastSearched[i] >> 8;
 		tree->searchDatas.get(&tree->searchDatas, primaryKey, &dataToSearch);
 		matchPos = (SearchPos*) isHit(tree, dataToSearch, keySearchData->wordCodes, keySearchData->codesCount, isT9);
 		if (matchPos == NULL) break;
 		//获取到匹配项构建路径序列
-		do
-		{
+		do {
 			mFatherPos = matchPos->father;
-			if (mFatherPos != NULL)
-			{
+			if (mFatherPos != NULL) {
 				mFatherPos->child = matchPos;
 				matchPos = mFatherPos;
 			}
 		}
-		while (mFatherPos != NULL );
+		while (mFatherPos != NULL);
 		//matchPos已指向最开始匹配的SearchPos
 
-		for (j = 0, k = 0; j < dataToSearch->codesCount; j++, k++)
-		{
+		for (j = 0, k = 0; j < dataToSearch->codesCount; j++, k++) {
 			wordCode = &(dataToSearch->wordCodes[j]);
 			wordIndex = wordCode->pyCodeNum >> 3;
-			while (k < wordIndex)
-			{ //当前字位置如果超越K的位置需要向charCache中填充空格 ->0x20
+			while (k < wordIndex) { //当前字位置如果超越K的位置需要向charCache中填充空格 ->0x20
 				pyCache.append(&pyCache, 0x20);
 				k++;
 			}
 
-			if (matchPos != NULL)
-			{
+			if (matchPos != NULL) {
 				wordPos = matchPos->pos >> 6; // matchPos匹配到的字位置,是SearchData 中的第wordPos字
 				pyIndex = (matchPos->pos >> 3) & 0x07;
 				charIndex = matchPos->pos & 0x07;
 
-				if (wordPos == j)
-				{ //本字被匹配
-					if (!dyeOpenPy)
-					{
+				if (wordPos == j) { //本字被匹配
+					if (!dyeOpenPy) {
 						dyeOpenPy = true;
-						for (n = 0; n < dyeStrLen; n++)
-						{
+						for (n = 0; n < dyeStrLen; n++) {
 							pyCache.append(&pyCache, dyeStr[n]);
 						}
 					}
-					if ((wordCode->pyCodeNum & 0x07) > 0)
-					{ //存在拼音
-						for (m = 0;; m++)
-						{
+					if ((wordCode->pyCodeNum & 0x07) > 0) { //存在拼音
+						for (m = 0;; m++) {
 							pyChar = PySpellCode[wordCode->pyCodeIndex[pyIndex]][m];
 							nextPyChar = PySpellCode[wordCode->pyCodeIndex[pyIndex]][m + 1];
 							if (m == 0) pyChar = pyChar - CapsOff; //对首字母进行大写
-							if (m == charIndex)
-							{
+							if (m == charIndex) {
 								matchPos = matchPos->child; //此匹配过程已被染色过程消耗掉,消耗拼音过程
 								if (matchPos != NULL && (matchPos->pos >> 6) == wordPos) charIndex = matchPos->pos & 0x07; //由于同一次匹配过程中不可能出现相同字的不同多音字不被匹配的情形,所以此处不再继续讨论pyIndex是否相等
 							}
-							else if (dyeOpenPy)
-							{
+							else if (dyeOpenPy) {
 								pyCache.append(&pyCache, '<');
 								pyCache.append(&pyCache, '/');
 								pyCache.append(&pyCache, 'f');
@@ -1986,23 +1754,20 @@ void getPyHighLights(SearchTree* tree, const int* lastSearched, const int count,
 						}
 
 					}
-					else
-					{
+					else {
 						pyCache.append(&pyCache, wordCode->srcUnicode); //非汉字直接将原文加入pyCache
 						matchPos = matchPos->child;
 					}
 					continue;
 				}
 				else
-				//本字非匹配
-				goto NoMatch;
+					//本字非匹配
+					goto NoMatch;
 			}
 
-			NoMatch:
-			{
+			NoMatch: {
 
-				if (dyeOpenPy)
-				{ //当匹配到一个非匹配字时完成<font></font>标签关闭
+				if (dyeOpenPy) { //当匹配到一个非匹配字时完成<font></font>标签关闭
 					pyCache.append(&pyCache, '<');
 					pyCache.append(&pyCache, '/');
 					pyCache.append(&pyCache, 'f');
@@ -2012,10 +1777,8 @@ void getPyHighLights(SearchTree* tree, const int* lastSearched, const int count,
 					pyCache.append(&pyCache, '>');
 					dyeOpenPy = false;
 				}
-				if ((wordCode->pyCodeNum & 0x07) > 0)
-				{ //存在拼音
-					for (m = 0;; m++)
-					{
+				if ((wordCode->pyCodeNum & 0x07) > 0) { //存在拼音
+					for (m = 0;; m++) {
 						pyChar = PySpellCode[wordCode->pyCodeIndex[0]][m];
 						nextPyChar = PySpellCode[wordCode->pyCodeIndex[0]][m + 1];
 						if (m == 0) pyChar = pyChar - CapsOff; //对首字母进行大写
@@ -2024,14 +1787,14 @@ void getPyHighLights(SearchTree* tree, const int* lastSearched, const int count,
 					}
 
 				}
-				else pyCache.append(&pyCache, wordCode->srcUnicode); //非汉字直接将原文加入pyCache
+				else
+					pyCache.append(&pyCache, wordCode->srcUnicode); //非汉字直接将原文加入pyCache
 			}
 		}
 
 		result[i] = (uchar*) malloc(sizeof(uchar) * (pyCache.size + 1));
 		node = pyCache.first;
-		for (j = 0; j < pyCache.size; j++)
-		{
+		for (j = 0; j < pyCache.size; j++) {
 			result[i][j] = (uchar) node->pData;
 			node = node->next;
 		}
@@ -2044,12 +1807,10 @@ void getPyHighLights(SearchTree* tree, const int* lastSearched, const int count,
 
 void freeWordCode(WordCode* pWordCode)
 {
-	if (pWordCode == NULL)
-	{
+	if (pWordCode == NULL) {
 		return;
 	}
-	if ((pWordCode->pyCodeNum & 0x07) > 0)
-	{
+	if ((pWordCode->pyCodeNum & 0x07) > 0) {
 		free(pWordCode->pyCodeIndex);
 	}
 	pWordCode->pyCodeIndex = NULL;
@@ -2066,17 +1827,14 @@ void freeSearchData(SearchData* data)
 	int i = 0;
 	if (data->sortKeys != NULL) free(data->sortKeys);
 	data->sortKeys = NULL;
-	if (data->wordCodes != NULL)
-	{
-		for (i = 0; i < count; i++)
-		{
+	if (data->wordCodes != NULL) {
+		for (i = 0; i < count; i++) {
 			freeWordCode(&(data->wordCodes[i]));
 		}
 		free(data->wordCodes);
 	}
 	data->wordCodes = NULL;
-	if (data->phones != NULL)
-	{
+	if (data->phones != NULL) {
 		for (i = 0; i < data->phoneCount; i++)
 			freeSearchPhone(&(data->phones[i]));
 		free(data->phones);
@@ -2089,29 +1847,25 @@ void freeSearchTree(SearchTree * tree)
 	int i = 0;
 	ArrayList * cache = NULL;
 	SearchData* data = NULL;
-	if (tree->foreignTreeIndexes != NULL)
-	{
+	if (tree->foreignTreeIndexes != NULL) {
 		tree->foreignTreeIndexes->dispose(tree->foreignTreeIndexes);
 		free(tree->foreignTreeIndexes);
 	}
 
-	if (tree->matchFunc != NULL)
-	{
+	if (tree->matchFunc != NULL) {
 		free(tree->matchFunc);
 	}
 	tree->searchPhones.dispose(&(tree->searchPhones));
 	tree->searchPosQueue.dispose(&(tree->searchPosQueue));
 	tree->lastSearched.dispose(&(tree->lastSearched));
 	cache = &tree->searchDatas;
-	for (i = 0; i < cache->size; i++)
-	{
+	for (i = 0; i < cache->size; i++) {
 		cache->get(cache, i, &data);
 		freeSearchData(data);
 		free(data);
 	}
 	cache->dispose(cache);
-	for (i = 0; i < CachedHitNum; i++)
-	{
+	for (i = 0; i < CachedHitNum; i++) {
 		cache = &(tree->firstSpellIndex[i]);
 		cache->dispose(cache);
 	}
@@ -2121,8 +1875,7 @@ void freeSearchTree(SearchTree * tree)
 	cache = &(tree->desPhoneResult);
 	cache->dispose(cache);
 
-	if (tree->keySearchData != NULL)
-	{
+	if (tree->keySearchData != NULL) {
 		freeSearchData(tree->keySearchData);
 		free(tree->keySearchData);
 	}

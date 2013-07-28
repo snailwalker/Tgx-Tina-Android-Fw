@@ -35,6 +35,8 @@ public abstract class OpenSDK<T extends BaseBridge, E extends IBridge<T>>
 		Intent aIntent = new Intent(tpImpl.getVoteAction());
 		aIntent.setData(Uri.parse(tpImpl.getVoteData()));
 		context.sendOrderedBroadcast(aIntent, tpImpl.getVotePermission());
+		//#debug
+		base.tina.core.log.LogPrinter.d("VOTE", "CRAct: " + tpImpl.getConsultResultAction() + " DS: " + tpImpl.getConsultResultScheme() + tpImpl.getConsultResultAuthority() + " CRPer: " + tpImpl.getConsultResultPermission() + " VAct: " + tpImpl.getVoteAction() + " VD: " + tpImpl.getVoteData() + " VPer: " + tpImpl.getVotePermission());
 	}
 	
 	public void beforeTerminate() {

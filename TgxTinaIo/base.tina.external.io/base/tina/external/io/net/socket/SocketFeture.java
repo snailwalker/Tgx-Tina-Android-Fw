@@ -1,5 +1,6 @@
 package base.tina.external.io.net.socket;
 
+import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 
 import base.tina.core.task.TaskService;
@@ -12,6 +13,7 @@ import base.tina.external.io.IoFeture;
 import base.tina.external.io.IoFilter;
 import base.tina.external.io.IoService;
 import base.tina.external.io.IoSession;
+import base.tina.external.io.IoUtil;
 
 
 public abstract class SocketFeture
@@ -31,11 +33,19 @@ public abstract class SocketFeture
 	private int                        pF0         = 0;
 	private int                        pF1         = 1;
 	private int                        nextConTime = pF0 + pF1;
+	static
+	{
+		System.setProperty("java.net.preferIPv6Addresses", "false");
+	}
 	
 	public SocketFeture(final String tarAddr, IoService ioService) {
 		this.ioService = ioService;
 		enabled = true;
-		url = tarAddr;
+		if (tarAddr == null || "".equals(tarAddr)) throw new NullPointerException();
+		String[] split = IoUtil.splitURL(tarAddr);
+		InetSocketAddress address = new InetSocketAddress(split[IoUtil.HOST], Integer.parseInt(split[IoUtil.PORT]));
+		byte[] rawAddr = address.getAddress().getAddress();
+		url = split[IoUtil.PROTOCOL] + "://" + (rawAddr[0] & 0xFF) + '.' + (rawAddr[1] & 0xFF) + '.' + (rawAddr[2] & 0xFF) + '.' + (rawAddr[3] & 0xFF) + ':' + split[IoUtil.PORT] + '/';
 		setBindSerial(hashCode());
 	}
 	

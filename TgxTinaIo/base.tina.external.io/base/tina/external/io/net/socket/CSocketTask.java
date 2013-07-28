@@ -37,7 +37,6 @@ public class CSocketTask
 	public final static int SerialNum = SocketTask.SerialNum + 1;
 	Selector                selector;
 	NioSocketICon           connection;
-	volatile boolean        disConnect;
 	final long              cTimeout  = TimeUnit.SECONDS.toMillis(60);
 	volatile boolean        finishConnect;
 	
@@ -85,6 +84,7 @@ public class CSocketTask
 						LSocketTask lSocketTask = LSocketTask.open();
 						lSocketTask.exchangeSelector(this);
 						if (!lSocketTask.isInit() && !scheduleService.requestService(lSocketTask, true, 0)) throw new IllegalStateException("LSocketTask is invalid");
+						else lSocketTask.wakeUp();
 						commitResult(ioSession, CommitAction.WAKE_UP);
 					}
 				}

@@ -41,13 +41,11 @@ public interface ITaskResult
 	public int getSerialNum();
 	
 	/**
-	 * reset设为进入队列 此处需要 volatile变量来作为标记
-	 * 
-	 * @author Zhangzhuo
-	 * @param reset
-	 *            true 重置这一变量 false 为默认值将设定对象已进入notify队列
+	 * @author Zhangzhuo 锁定当前的状态等待真正的入队结果，如果成功，将保持这一锁定状态直至离开ResponseQueue；
 	 */
-	public void setResponse(boolean reset);
+	public void lockResponsed();
+	
+	public void unlockResponsed();
 	
 	/**
 	 * 当前存在队列中的状态
@@ -84,5 +82,5 @@ public interface ITaskResult
 	
 	public Object getAttribute(String key);
 	
-	public boolean otherHandler();
+	public boolean canOtherHandle();
 }

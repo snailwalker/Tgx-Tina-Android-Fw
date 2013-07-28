@@ -23,6 +23,7 @@ import base.tina.core.log.ILogPrinter.Level;
 public class LogPrinter
 {
 	private static ILogPrinter  iLogPrinter;
+	private static ILogSetting  iLogSetting;
 	private static final String TGX_TAG = "TGX";
 	
 	public final static void setIPrinter(ILogPrinter logPrinter) {
@@ -115,7 +116,7 @@ public class LogPrinter
 	
 	public final static int println(String tag, Level level, String msg, Throwable throwable) {
 		if (tag == null || "".equals(tag.trim())) tag = TGX_TAG;
-		if (!AbstractLogSetting.isRemotePrint()) return 0;
+		if (iLogSetting != null && !iLogSetting.isRemotePrint()) return 0;
 		int printNum = 0;
 		if (_instance != null && _instance.logIoActor != null) try
 		{
@@ -146,7 +147,7 @@ public class LogPrinter
 	
 	public static LogPrinter getLogPrinter(ILogIoActor iLogIoActor) {
 		if (iLogIoActor == null) throw new NullPointerException();
-		else AbstractLogSetting.enableRPrint();
+		else if (iLogSetting != null) iLogSetting.enableRPrint();
 		if (_instance == null) return new LogPrinter(iLogIoActor);
 		else setIoActor(iLogIoActor);
 		return _instance;

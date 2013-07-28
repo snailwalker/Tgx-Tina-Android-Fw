@@ -1,3 +1,18 @@
+/*******************************************************************************
+ * Copyright 2013 Zhang Zhuo(william@TinyGameX.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ *******************************************************************************/
 #ifndef SEARCHCORE_H
 #define SEARCHCORE_H
 #include "Collection.h"
@@ -21,8 +36,8 @@
 
 typedef struct WordCode
 {
-	uchar srcUnicode;
-	uchar wordUnicode; //原始Unicode码
+	uchar srcUnicode;//原始Unicode码
+	uchar wordUnicode;
 	uchar pyCodeNum; // 拼音码个数 处于低3位上 0-7,因为多音字最多有5个.高三位到低三位中间的10位表示本字在全字串中的Index,共1024个 ,高3位无用
 	short* pyCodeIndex; // 拼音码值（支持多拼音）
 } WordCode;
@@ -75,31 +90,22 @@ typedef struct SearchResult
 
 typedef struct SearchTree
 {
-	//键盘字母与数字的对应关系
-	char* matchFunc;
-	//是否使用T9输入类型的Match过程
-	boolean matchType;
-	char userMode;
-	//当前输入转换的搜索串
-	struct SearchData* keySearchData;
-	//外部系统
-	struct ArrayList* foreignTreeIndexes;
+	char* matchFunc;//键盘字母与数字的对应关系
+	struct SearchData* keySearchData;//当前输入转换的搜索串
+	struct ArrayList* foreignTreeIndexes;//外部系统
 	struct ArrayList searchDatas;
 	struct LinkedList searchPhones;
-	//内容存储为primaryKey由于其递增唯一的特性,所以同时作为Index内部排序规则使用.
-	struct ArrayList firstSpellIndex[CachedHitNum];
+	struct ArrayList firstSpellIndex[CachedHitNum];//内容存储为primaryKey由于其递增唯一的特性,所以同时作为Index内部排序规则使用.
 	struct ArrayList desNameResult;
 	struct ArrayList desPhoneResult;
 	struct LinkedList searchPosQueue;
 	struct LinkedList lastSearched;
+	boolean matchType;//是否使用T9输入类型的Match过程
+	char userMode;
+	boolean dirty;//数据是否已经处于错误状态，需要进行清理
 } SearchTree;
 
 #define SIZEOF_SEARCHTREE (sizeof(SearchTree))
-
-enum
-{
-	ID_Ascii = 0, ID_PySpellCode = 1, ID_uchar_tIndex = 2, ID_uchar_tIndex2 = 3, ID_CannotSpell = 4
-};
 
 //==============================================  BEGIN  ================================================
 //供外部调用的函数
@@ -126,19 +132,14 @@ void treeBuildIndex(SearchTree* tree);
  * aPhoneMatchHits：号码搜索结果
  * sortByMatchValue：按搜索位置排序
  */
-void treeSearch(SearchTree* tree, const uchar* keyText, const int keyLength, LinkedList* lastSearched, ArrayList* desNameMatchHits, ArrayList* desPhoneMatchHits, int resultLimit,
-		ulong64 filter, boolean isT9);
+void treeSearch(SearchTree* tree, const uchar* keyText, const int keyLength, LinkedList* lastSearched, ArrayList* desNameMatchHits, ArrayList* desPhoneMatchHits, int resultLimit, ulong64 filter, boolean isT9);
 
-void getHighLights(SearchTree* tree, const int* lastSearched, const int count, const uchar* keyText, const int keyLength, const char* dyeStr, const int dyeStrLen, uchar ** result,
-		boolean isT9);
+void getHighLights(SearchTree* tree, const int* lastSearched, const int count, const uchar* keyText, const int keyLength, const char* dyeStr, const int dyeStrLen, uchar ** result, boolean isT9);
 
-void getPyHighLights(SearchTree* tree, const int* lastSearched, const int count, const uchar* keyText, const int keyLength, const char* dyeStr, const int dyeStrLen, uchar** result,
-		boolean isT9);
-void getNameHighLights(SearchTree* tree, const int* lastSearched, const int count, const uchar* keyText, const int keyLength, const char* dyeStr, const int dyeStrLen,
-		uchar ** result, boolean isT9);
+void getPyHighLights(SearchTree* tree, const int* lastSearched, const int count, const uchar* keyText, const int keyLength, const char* dyeStr, const int dyeStrLen, uchar** result, boolean isT9);
+void getNameHighLights(SearchTree* tree, const int* lastSearched, const int count, const uchar* keyText, const int keyLength, const char* dyeStr, const int dyeStrLen, uchar ** result, boolean isT9);
 
-void getPhoneHighLights(SearchTree* tree, const int* lastSearched, const int count, const uchar* keyText, const int keyLength, const char* dyeStr, const int dyeStrLen,
-		uchar ** result);
+void getPhoneHighLights(SearchTree* tree, const int* lastSearched, const int count, const uchar* keyText, const int keyLength, const char* dyeStr, const int dyeStrLen, uchar ** result);
 
 int* getInofsPrimaryKeys(SearchTree* tree, ulong64 filter);
 void getFirstPyPrimaryKeys(SearchTree* tree, int* primaryKeys, ulong64 filter);
